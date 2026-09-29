@@ -1,0 +1,6 @@
+{
+  "name": "RITM Telegram Bot & Order Platform",
+  "description": "Telegram bot and web portal for project order registration and client management for RITM creative agency.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
