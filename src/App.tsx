@@ -160,6 +160,7 @@ export default function App() {
         onAdminLogout={handleAdminLogout}
         onOpenAdminLogin={() => setShowAdminLoginModal(true)}
       />
+      <div className="h-24 sm:h-28" aria-hidden="true" />
 
       {/* Global Announcement Banner (if configured in Admin settings) */}
       {typeof window !== 'undefined' && localStorage.getItem('ritm_announcement') && (
