@@ -123,27 +123,27 @@ export const BotHealthTerminal: React.FC<BotHealthTerminalProps> = ({ lang }) =>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Telegram Bot Info */}
+        {/* Studio Storage Info */}
         <div className="glass-card rounded-2xl p-5 border border-white/10 text-right">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-xs text-[#958ea0]">{lang === 'fa' ? 'ربات تلگرام' : 'Telegram Bot'}</span>
-            <span className="w-2 h-2 rounded-full bg-emerald-400" />
+            <span className="text-xs text-[#958ea0]">{lang === 'fa' ? 'فضای دیسک ابری ریتم' : 'RITM Cloud Storage'}</span>
+            <span className="w-2 h-2 rounded-full bg-[#a3e635] shadow-[0_0_8px_#a3e635]" />
           </div>
-          <span className="text-lg font-bold text-[#e5e2e1] block">
-            @{statusData?.bot?.username || 'RITM_FreeLancbot'}
+          <span className="text-lg font-bold text-[#e5e2e1] block font-mono">
+            {statusData?.metrics?.storageUsedMB || 0} MB / 1024 MB
           </span>
           <div className="mt-3 pt-3 border-t border-white/[0.08] text-xs font-mono text-[#958ea0] space-y-1">
             <div className="flex justify-between">
-              <span>شناسه ربات:</span>
-              <span className="text-[#e5e2e1]">{statusData?.bot?.id || '8933995842'}</span>
+              <span>تعداد فایل‌ها:</span>
+              <span className="text-[#e5e2e1]">{statusData?.metrics?.storageFileCount || 0} فایل</span>
             </div>
             <div className="flex justify-between">
-              <span>وضعیت Poller:</span>
-              <span className="text-emerald-400">Listening...</span>
+              <span>وضعیت آپلود:</span>
+              <span className="text-[#a3e635]">فعال و آنلاین</span>
             </div>
             <div className="flex justify-between">
-              <span>ادمین پیش‌فرض:</span>
-              <span className="text-[#d0bcff]">{statusData?.adminId || '8770212764'}</span>
+              <span>مسیر دیسک:</span>
+              <span className="text-[#d0bcff]">/uploads/</span>
             </div>
           </div>
         </div>

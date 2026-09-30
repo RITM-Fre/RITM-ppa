@@ -18,8 +18,24 @@ export interface Order {
   deadline?: string | null;
   status: OrderStatus;
   admin_notes?: string | null;
+  attached_file_name?: string | null;
+  attached_file_url?: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface PortfolioProject {
+  id: string;
+  category: ProjectType;
+  type: 'video' | 'image';
+  titleFa: string;
+  titleEn: string;
+  descFa: string;
+  descEn: string;
+  tags: string[];
+  image: string;
+  mediaUrl?: string;
+  posterUrl?: string;
 }
 
 export interface User {

@@ -196,26 +196,12 @@ export const OrderWizard: React.FC<OrderWizardProps> = ({
     const finalBudget = budget.trim() || 'توافقی';
 
     try {
-      const data = await createOrder({
-        full_name: fullName.trim(),
-        contact: contact.trim(),
-        contact_type: contactType,
-        project_type: projectType,
-        budget: finalBudget,
-        deadline: deadline.trim() || 'توافقی',
-        description: description.trim(),
-        telegram_id: telegramId ? parseInt(telegramId, 10) : 0,
-        username: username.replace(/^@/, '') || null,
-        user_id: currentUser?.id || null,
-      });
+      let uploadedFileUrl: string | null = null;
+      let uploadedFileName: string | null = null;
 
-      if (!data.success || !data.order) {
-        throw new Error(data.error || 'خطا در ثبت سفارش');
-      }
-
-      // If user attached a file (photo or video), forward it directly to Telegram Admin!
+      // 1. If file attached, upload first
       if (selectedFile) {
-        setUploadStatus(lang === 'fa' ? 'در حال ارسال مستقیم عکس/ویدیو به تلگرام مدیریت ریتم...' : 'Forwarding media to Telegram...');
+        setUploadStatus(lang === 'fa' ? 'در حال آپلود و ذخیره فایل روی سرور استودیو...' : 'Uploading file to studio storage...');
         const reader = new FileReader();
         const base64Promise = new Promise<string>((resolve, reject) => {
           reader.onload = () => resolve(reader.result as string);
@@ -224,15 +210,54 @@ export const OrderWizard: React.FC<OrderWizardProps> = ({
         });
 
         const fileBase64 = await base64Promise;
-        await uploadOrderMedia({
-          orderCode: data.order.order_code,
+        const uploadRes = await uploadOrderMedia({
+          orderCode: 'PENDING',
           clientName: fullName.trim(),
           contact: contact.trim(),
           fileName: selectedFile.name,
-          fileType: selectedFile.type,
+          fileType: selectedFile.type || 'application/octet-stream',
           fileBase64,
-          caption: `سفارش ${data.order.order_code} - ${description.substring(0, 100)}`,
+          caption: `سفارش جدید - ${description.substring(0, 100)}`,
         });
+
+        if (uploadRes.success && (uploadRes as any).file) {
+          uploadedFileUrl = (uploadRes as any).file.url;
+          uploadedFileName = (uploadRes as any).file.fileName;
+        }
+      }
+
+      setUploadStatus(lang === 'fa' ? 'در حال ثبت نهایی سفارش در سیستم...' : 'Saving order...');
+
+      const descWithFile = uploadedFileUrl
+        ? `${description.trim()}\n\n📎 فایل پیوست: ${uploadedFileName || selectedFile?.name} (${uploadedFileUrl})`
+        : description.trim();
+
+      const data = await createOrder({
+        full_name: fullName.trim(),
+        contact: contact.trim(),
+        contact_type: contactType,
+        project_type: projectType,
+        budget: finalBudget,
+        deadline: deadline.trim() || 'توافقی',
+        description: descWithFile,
+        telegram_id: telegramId ? parseInt(telegramId, 10) : 0,
+        username: username.replace(/^@/, '') || null,
+        user_id: currentUser?.id || null,
+        attached_file_url: uploadedFileUrl,
+        attached_file_name: uploadedFileName || selectedFile?.name || null,
+      });
+
+      if (!data.success || !data.order) {
+        throw new Error(data.error || 'خطا در ثبت سفارش');
+      }
+
+      // Link order code to stored file
+      if (uploadedFileUrl) {
+        fetch('/api/admin/storage/link', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fileUrl: uploadedFileUrl, orderCode: data.order.order_code }),
+        }).catch(() => {});
       }
 
       setSubmittedOrder(data.order);
@@ -714,8 +739,8 @@ export const OrderWizard: React.FC<OrderWizardProps> = ({
                   <Paperclip className="w-4 h-4 text-[#d0bcff]" />
                   <span>{lang === 'fa' ? 'ضمیمه فایل نمونه (عکس یا فیلم)' : 'Attach Reference File (Photo or Video)'}</span>
                 </label>
-                <span className="text-[11px] text-[#958ea0]">
-                  {lang === 'fa' ? 'مستقیم به تلگرام مدیریت' : 'Direct to Telegram'}
+                <span className="text-[11px] text-[#adc6ff]">
+                  {lang === 'fa' ? 'ذخیره در سرور استودیو ریتم' : 'Saved to Studio Cloud'}
                 </span>
               </div>
 
@@ -764,17 +789,17 @@ export const OrderWizard: React.FC<OrderWizardProps> = ({
               )}
             </div>
 
-            {/* Telegram Sync note */}
+            {/* Studio Cloud Storage note */}
             <div className="p-3.5 rounded-xl bg-white/[0.03] border border-white/[0.08] flex items-center justify-between text-xs text-[#958ea0]">
               <div className="flex items-center gap-2">
-                <Send className="w-4 h-4 text-[#d0bcff]" />
+                <CheckCircle2 className="w-4 h-4 text-[#a3e635]" />
                 <span>
                   {lang === 'fa'
-                    ? 'سفارش و فایل‌های ضمیمه بلافاصله به تلگرام مدیریت (@AdvRFL) و ربات ارسال می‌شود.'
-                    : 'Order & media dispatches live to Telegram management & @RITM_FreeLancbot.'}
+                    ? 'سفارش و فایل‌های ضمیمه در دیسک ابری استودیو ریتم ثبت و در پنل مدیریت بررسی می‌شوند.'
+                    : 'Order & media are saved directly to RITM Studio cloud storage.'}
                 </span>
               </div>
-              <span className="font-mono text-[11px] text-[#adc6ff]">Live Sync</span>
+              <span className="font-mono text-[11px] text-[#adc6ff]">Cloud Storage</span>
             </div>
 
             {uploadStatus && (

@@ -260,17 +260,17 @@ export default function App() {
         </button>
       </div>
 
-      {/* Floating direct Telegram link button on bottom-left */}
+      {/* Floating direct Telegram Channel link button on bottom-left */}
       <a
-        href="https://t.me/RITM_FreeLancbot"
+        href="https://t.me/RITM_FreeLancer"
         target="_blank"
         rel="noopener noreferrer"
-        className="fixed bottom-6 left-6 z-40 p-3.5 rounded-full bg-[#d0bcff] text-[#131313] shadow-2xl hover:scale-110 active:scale-95 transition-all flex items-center gap-2 group hover:shadow-[#d0bcff]/30"
-        title="Open Telegram Bot"
+        className="fixed bottom-6 left-6 z-40 p-3.5 rounded-full bg-[#d0bcff] text-[#131313] shadow-2xl hover:scale-110 active:scale-95 transition-all flex items-center gap-2 group hover:shadow-[#d0bcff]/30 cursor-pointer"
+        title="کانال رسمی تلگرام ریتم"
       >
         <Send className="w-5 h-5 fill-current" />
-        <span className="max-w-0 overflow-hidden whitespace-nowrap group-hover:max-w-xs transition-all duration-300 font-semibold text-xs px-0 group-hover:px-1">
-          @RITM_FreeLancbot
+        <span className="max-w-0 overflow-hidden whitespace-nowrap group-hover:max-w-xs transition-all duration-300 font-bold text-xs px-0 group-hover:px-1">
+          @RITM_FreeLancer
         </span>
       </a>
 

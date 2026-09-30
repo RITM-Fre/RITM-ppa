@@ -21,6 +21,7 @@ import {
   Download,
   FolderOpen,
   Sparkles,
+  Paperclip,
 } from 'lucide-react';
 import { Order, User, OrderStatus } from '../types';
 import { getOrders, getUsers, updateOrderStatus, sendMessage, deleteUser } from '../services/api';
@@ -270,8 +271,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ lang, onLogout }) => {
           </div>
           <p className="text-xs text-[#958ea0] mt-1">
             {lang === 'fa'
-              ? 'متصل مستقیم به پایگاه داده Supabase و ربات تلگرام @RITM_FreeLancbot'
-              : 'Direct connection to Supabase database & @RITM_FreeLancbot'}
+              ? 'متصل مستقیم به پایگاه داده Supabase و فضای ذخیره‌سازی ابری ریتم'
+              : 'Direct connection to Supabase database & RITM Cloud Storage'}
           </p>
         </div>
 
@@ -456,7 +457,15 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ lang, onLogout }) => {
                           onClick={() => openOrderDrawer(ord)}
                         >
                           <td className="py-3.5 px-4 font-mono font-bold text-[#d0bcff]">
-                            {ord.order_code}
+                            <div className="flex items-center gap-1.5">
+                              <span>{ord.order_code}</span>
+                              {(ord.description?.includes('/uploads/') || ord.attached_file_url || storageFiles.some((f) => f.orderCode === ord.order_code)) && (
+                                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-[#38bdf8]/15 border border-[#38bdf8]/30 text-[#38bdf8] text-[9.5px] font-sans" title="دارای فایل پیوست">
+                                  <Paperclip className="w-2.5 h-2.5" />
+                                  <span>فایل</span>
+                                </span>
+                              )}
+                            </div>
                           </td>
                           <td className="py-3.5 px-4">
                             <span className="font-semibold text-[#e5e2e1] block">{ord.full_name}</span>
@@ -940,6 +949,77 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ lang, onLogout }) => {
                 {selectedOrder.description}
               </div>
             </div>
+
+            {/* Attached Files Section */}
+            {(() => {
+              const matchedFiles = storageFiles.filter((f) => f.orderCode === selectedOrder.order_code);
+              const hasFileInDesc = selectedOrder.description?.includes('/uploads/');
+              const urlMatch = hasFileInDesc ? selectedOrder.description.match(/\/uploads\/[^\s\)]+/) : null;
+              const attachedUrl = selectedOrder.attached_file_url || (urlMatch ? urlMatch[0] : null);
+              const attachedName = selectedOrder.attached_file_name || (hasFileInDesc ? 'فایل پیوست سفارش' : null);
+
+              if (matchedFiles.length === 0 && !attachedUrl) return null;
+
+              return (
+                <div className="mb-6 p-4 rounded-xl bg-gradient-to-br from-[#38bdf8]/10 to-[#d0bcff]/10 border border-[#38bdf8]/30 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                      <Paperclip className="w-4 h-4 text-[#38bdf8]" />
+                      <span>فایل‌های پیوست ارسالی کارفرما:</span>
+                    </span>
+                    <span className="text-[10px] font-mono text-[#38bdf8] px-2 py-0.5 rounded bg-black/40 border border-[#38bdf8]/30">
+                      {matchedFiles.length || 1} فایل در سرور
+                    </span>
+                  </div>
+
+                  <div className="space-y-2">
+                    {matchedFiles.map((file) => (
+                      <div key={file.id} className="p-3 rounded-xl bg-black/50 border border-white/10 flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-2.5 overflow-hidden">
+                          <FolderOpen className="w-5 h-5 text-[#d0bcff] shrink-0" />
+                          <div className="text-right truncate">
+                            <span className="text-xs font-semibold text-white block truncate">{file.fileName}</span>
+                            <span className="text-[10px] text-[#8c94a4] font-mono block">
+                              {(file.sizeBytes / (1024 * 1024)).toFixed(2)} MB · {new Date(file.uploadDate).toLocaleDateString('fa-IR')}
+                            </span>
+                          </div>
+                        </div>
+                        <a
+                          href={file.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-3 py-1.5 rounded-lg bg-[#38bdf8] hover:bg-[#38bdf8]/90 text-black font-bold text-xs flex items-center gap-1.5 transition-all shadow-md shrink-0 cursor-pointer"
+                        >
+                          <Download className="w-3.5 h-3.5" />
+                          <span>دانلود فایل</span>
+                        </a>
+                      </div>
+                    ))}
+
+                    {matchedFiles.length === 0 && attachedUrl && (
+                      <div className="p-3 rounded-xl bg-black/50 border border-white/10 flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-2.5 overflow-hidden">
+                          <FolderOpen className="w-5 h-5 text-[#d0bcff] shrink-0" />
+                          <div className="text-right truncate">
+                            <span className="text-xs font-semibold text-white block truncate">{attachedName || 'فایل پیوست سفارش'}</span>
+                            <span className="text-[10px] text-[#8c94a4] font-mono block">ذخیره شده در سرور</span>
+                          </div>
+                        </div>
+                        <a
+                          href={attachedUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-3 py-1.5 rounded-lg bg-[#38bdf8] hover:bg-[#38bdf8]/90 text-black font-bold text-xs flex items-center gap-1.5 transition-all shadow-md shrink-0 cursor-pointer"
+                        >
+                          <Download className="w-3.5 h-3.5" />
+                          <span>دانلود فایل</span>
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* Status Update Form */}
             <div className="p-4 rounded-xl bg-white/[0.03] border border-white/10 mb-6 space-y-4">

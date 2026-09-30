@@ -481,15 +481,14 @@ export async function sendMessage(
 }
 
 // 10. System Status / Health
-export async function getSystemStatus(): Promise<{
-  success: boolean;
-  status: string;
-  database: string;
-  telegramBot: string;
-  totalOrders: number;
-  totalUsers: number;
-}> {
+export async function getSystemStatus(): Promise<any> {
   try {
+    const res = await fetch('/api/status');
+    if (res.ok) {
+      const data = await res.json();
+      return data;
+    }
+
     const [{ count: ordersCount }, { count: usersCount }] = await Promise.all([
       supabase.from('orders').select('*', { count: 'exact', head: true }),
       supabase.from('users').select('*', { count: 'exact', head: true }),
@@ -499,18 +498,24 @@ export async function getSystemStatus(): Promise<{
       success: true,
       status: 'operational',
       database: 'Supabase PostgreSQL Online',
-      telegramBot: '@RITM_FreeLancbot Active',
-      totalOrders: ordersCount || 0,
-      totalUsers: usersCount || 0,
+      metrics: {
+        totalOrders: ordersCount || 0,
+        totalUsers: usersCount || 0,
+        storageUsedMB: 0,
+        storageMaxMB: 1024,
+      },
     };
   } catch (e: any) {
     return {
       success: false,
       status: 'degraded',
       database: 'Disconnected',
-      telegramBot: 'Unknown',
-      totalOrders: 0,
-      totalUsers: 0,
+      metrics: {
+        totalOrders: 0,
+        totalUsers: 0,
+        storageUsedMB: 0,
+        storageMaxMB: 1024,
+      },
     };
   }
 }

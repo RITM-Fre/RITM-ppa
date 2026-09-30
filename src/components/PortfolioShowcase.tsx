@@ -9,6 +9,9 @@ import {
   ChevronDown,
   CheckCircle2,
   ExternalLink,
+  Play,
+  X,
+  Eye,
 } from 'lucide-react';
 import { SERVICES, PORTFOLIO_ITEMS, FAQ_ITEMS, heroImage } from '../data/mockData';
 import { ProjectType } from '../types';
@@ -24,6 +27,7 @@ export const PortfolioShowcase: React.FC<PortfolioShowcaseProps> = ({
 }) => {
   const [filter, setFilter] = useState<'all' | ProjectType>('all');
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
+  const [selectedMediaProject, setSelectedMediaProject] = useState<any | null>(null);
 
   const filteredItems = PORTFOLIO_ITEMS.filter((item) =>
     filter === 'all' ? true : item.category === filter
@@ -201,7 +205,8 @@ export const PortfolioShowcase: React.FC<PortfolioShowcaseProps> = ({
           {filteredItems.map((item) => (
             <div
               key={item.id}
-              className="glass-card rounded-2xl overflow-hidden border border-white/10 group flex flex-col justify-between"
+              className="glass-card rounded-2xl overflow-hidden border border-white/10 group flex flex-col justify-between hover:border-[#d0bcff]/40 transition-all cursor-pointer"
+              onClick={() => setSelectedMediaProject(item)}
             >
               <div className="relative aspect-[16/10] overflow-hidden bg-black/50">
                 <img
@@ -210,8 +215,17 @@ export const PortfolioShowcase: React.FC<PortfolioShowcaseProps> = ({
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-[#131313] via-transparent to-transparent opacity-80" />
+                
+                {item.type === 'video' && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="w-12 h-12 rounded-full bg-[#d0bcff]/30 backdrop-blur-md border border-[#d0bcff]/60 flex items-center justify-center text-white group-hover:scale-110 transition-transform shadow-lg">
+                      <Play className="w-5 h-5 fill-current ml-0.5" />
+                    </div>
+                  </div>
+                )}
+
                 <div className="absolute top-3 left-3 flex flex-wrap gap-1.5">
-                  {item.tags.map((t, idx) => (
+                  {item.tags.map((t: string, idx: number) => (
                     <span
                       key={idx}
                       className="px-2 py-0.5 rounded text-[10px] font-mono bg-black/60 text-[#e5e2e1] backdrop-blur-md border border-white/10"
@@ -234,10 +248,14 @@ export const PortfolioShowcase: React.FC<PortfolioShowcaseProps> = ({
 
                 <div className="pt-3 border-t border-white/[0.08] flex items-center justify-between">
                   <button
-                    onClick={() => onSelectCategoryForOrder(item.category)}
-                    className="inline-flex items-center gap-1.5 text-xs text-[#d0bcff] hover:underline font-semibold"
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onSelectCategoryForOrder(item.category);
+                    }}
+                    className="inline-flex items-center gap-1.5 text-xs text-[#d0bcff] hover:underline font-semibold cursor-pointer"
                   >
-                    <span>{lang === 'fa' ? 'سفارش پروژه مشابه' : 'Request Similar'}</span>
+                    <span>{lang === 'fa' ? 'سفارش این سبک' : 'Order This Style'}</span>
                     {lang === 'fa' ? <ArrowLeft className="w-3.5 h-3.5" /> : <ArrowRight className="w-3.5 h-3.5" />}
                   </button>
                   <span className="text-[10px] font-mono text-[#958ea0] uppercase">
@@ -249,6 +267,90 @@ export const PortfolioShowcase: React.FC<PortfolioShowcaseProps> = ({
           ))}
         </div>
       </div>
+
+      {/* Media Preview Modal */}
+      {selectedMediaProject && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+          <div className="glass-panel w-full max-w-3xl rounded-3xl border border-white/20 p-6 shadow-2xl relative space-y-4 text-right overflow-hidden my-auto max-h-[92vh] flex flex-col">
+            <div className="flex items-center justify-between pb-3 border-b border-white/10">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-mono px-2 py-0.5 rounded bg-[#d0bcff]/15 text-[#d0bcff] uppercase">
+                  {selectedMediaProject.category}
+                </span>
+                <h3 className="text-base font-bold text-white">
+                  {lang === 'fa' ? selectedMediaProject.titleFa : selectedMediaProject.titleEn}
+                </h3>
+              </div>
+              <button
+                onClick={() => setSelectedMediaProject(null)}
+                className="p-1.5 rounded-full bg-white/10 hover:bg-white/20 text-[#8c94a4] hover:text-white transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="overflow-y-auto space-y-4">
+              {/* Media Display */}
+              <div className="relative aspect-video rounded-2xl overflow-hidden bg-black border border-white/10 flex items-center justify-center">
+                {selectedMediaProject.type === 'video' ? (
+                  <video
+                    src={selectedMediaProject.mediaUrl}
+                    poster={selectedMediaProject.posterUrl || selectedMediaProject.image}
+                    controls
+                    autoPlay
+                    playsInline
+                    className="w-full h-full object-cover"
+                  >
+                    مرورگر شما از پخش ویدیو پشتیبانی نمی‌کند.
+                  </video>
+                ) : (
+                  <img
+                    src={selectedMediaProject.mediaUrl || selectedMediaProject.image}
+                    alt={selectedMediaProject.titleFa}
+                    className="w-full h-full object-cover"
+                  />
+                )}
+              </div>
+
+              <p className="text-xs text-[#b8b3c4] leading-relaxed">
+                {lang === 'fa' ? selectedMediaProject.descFa : selectedMediaProject.descEn}
+              </p>
+
+              <div className="flex flex-wrap gap-2 pt-2 border-t border-white/10">
+                {selectedMediaProject.tags?.map((t: string, i: number) => (
+                  <span
+                    key={i}
+                    className="px-2.5 py-1 rounded-full text-[11px] font-mono bg-white/5 border border-white/10 text-[#d0bcff]"
+                  >
+                    {t}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            <div className="pt-3 border-t border-white/10 flex items-center justify-between gap-3">
+              <button
+                onClick={() => {
+                  const cat = selectedMediaProject.category;
+                  setSelectedMediaProject(null);
+                  onSelectCategoryForOrder(cat);
+                }}
+                className="px-6 py-2.5 rounded-xl bg-[#d0bcff] hover:bg-[#d0bcff]/90 text-[#0d0f17] font-bold text-xs flex items-center gap-2 cursor-pointer transition-all shadow-md"
+              >
+                <span>{lang === 'fa' ? 'شروع سفارش با این فرمت و سبک' : 'Start Order with this Style'}</span>
+                {lang === 'fa' ? <ArrowLeft className="w-4 h-4" /> : <ArrowRight className="w-4 h-4" />}
+              </button>
+
+              <button
+                onClick={() => setSelectedMediaProject(null)}
+                className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-xs text-[#8c94a4] cursor-pointer"
+              >
+                {lang === 'fa' ? 'بستن' : 'Close'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* FAQ Section */}
       <div className="max-w-3xl mx-auto pt-6">

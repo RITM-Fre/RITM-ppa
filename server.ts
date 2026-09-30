@@ -32,7 +32,12 @@ const UPLOADS_DIR = path.join(__dirname, 'uploads');
 if (!fs.existsSync(UPLOADS_DIR)) {
   fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 }
+const PUBLIC_UPLOADS_DIR = path.join(__dirname, 'public', 'uploads');
+if (!fs.existsSync(PUBLIC_UPLOADS_DIR)) {
+  fs.mkdirSync(PUBLIC_UPLOADS_DIR, { recursive: true });
+}
 app.use('/uploads', express.static(UPLOADS_DIR));
+app.use('/uploads', express.static(PUBLIC_UPLOADS_DIR));
 
 // 1 GB Total Storage Limit (in bytes)
 const MAX_STORAGE_BYTES = 1024 * 1024 * 1024; // 1,073,741,824 bytes = 1 GB
@@ -897,92 +902,6 @@ export async function handleBotIncoming({
   return responses;
 }
 
-// Telegram Long Polling Background Daemon
-let lastUpdateId = 0;
-let isPollingActive = true;
-
-async function startTelegramPoller() {
-  logBot('Starting Telegram Bot Polling listener for @RITM_FreeLancbot...');
-
-  // Set bot description and commands
-  try {
-    await callTelegram('setMyCommands', {
-      commands: [
-        { command: 'start', description: 'شروع ربات و منوی اصلی ریتم' },
-        { command: 'order', description: 'ثبت سفارش پروژه جدید' },
-        { command: 'myorders', description: 'پیگیری سفارش‌های من' },
-        { command: 'services', description: 'مشاهده لیست خدمات و تعرفه‌ها' },
-        { command: 'portfolio', description: 'نمونه کارهای استودیو ریتم' },
-        { command: 'contact', description: 'ارتباط با پشتیبانی و تیم' },
-      ],
-    });
-    logBot('Telegram bot commands registered successfully.');
-  } catch (e) {
-    console.error('Failed to set bot commands:', e);
-  }
-
-  while (isPollingActive) {
-    try {
-      const res = await fetch(
-        `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getUpdates?offset=${lastUpdateId + 1}&timeout=20`
-      );
-      if (!res.ok) {
-        await new Promise((r) => setTimeout(r, 4000));
-        continue;
-      }
-      const data = await res.json();
-      if (data.ok && Array.isArray(data.result)) {
-        for (const update of data.result) {
-          lastUpdateId = Math.max(lastUpdateId, update.update_id);
-
-          if (update.message) {
-            const msg = update.message;
-            const chatId = msg.chat.id;
-            const from = msg.from;
-            const text = msg.text || '';
-            logBot(`Incoming msg from ${from?.first_name || from?.id} (@${from?.username || '-'}): "${text || '[Media]'}"`);
-            await handleBotIncoming({
-              chatId,
-              userId: from.id,
-              text,
-              username: from.username,
-              firstName: from.first_name,
-              lastName: from.last_name,
-              photo: msg.photo,
-              video: msg.video,
-              document: msg.document,
-              voice: msg.voice,
-              caption: msg.caption,
-            });
-          } else if (update.callback_query) {
-            const cb = update.callback_query;
-            const chatId = cb.message?.chat?.id;
-            const from = cb.from;
-            const callbackData = cb.data;
-            logBot(`Callback from ${from?.first_name || from?.id}: ${callbackData}`);
-            // Answer callback query
-            await callTelegram('answerCallbackQuery', { callback_query_id: cb.id });
-            await handleBotIncoming({
-              chatId: chatId || from.id,
-              userId: from.id,
-              callbackData,
-              username: from.username,
-              firstName: from.first_name,
-              lastName: from.last_name,
-            });
-          }
-        }
-      }
-    } catch (err) {
-      logBot(`Polling error: ${String(err)}`, 'warn');
-      await new Promise((r) => setTimeout(r, 5000));
-    }
-  }
-}
-
-// Telegram Poller disabled as requested (Pure Web Application mode)
-// startTelegramPoller();
-
 // --- MEDIA STORAGE & UPLOAD (1 GB Quota on Server) ---
 app.post('/api/upload-media', async (req: Request, res: Response) => {
   try {
@@ -1010,6 +929,9 @@ app.post('/api/upload-media', async (req: Request, res: Response) => {
     const filePath = path.join(UPLOADS_DIR, storedFileName);
 
     fs.writeFileSync(filePath, buffer);
+    try {
+      fs.writeFileSync(path.join(PUBLIC_UPLOADS_DIR, storedFileName), buffer);
+    } catch (e) {}
 
     const fileRecord: StoredFileRecord = {
       id: Math.random().toString(36).substring(2, 10),
@@ -1027,6 +949,18 @@ app.post('/api/upload-media', async (req: Request, res: Response) => {
 
     currentFiles.unshift(fileRecord);
     saveStorageMeta(currentFiles);
+
+    // If orderCode exists and not PENDING, update Supabase order description
+    if (orderCode && orderCode !== 'PENDING') {
+      try {
+        const { data: ord } = await supabase.from('orders').select('id, description').eq('order_code', orderCode).maybeSingle();
+        if (ord && !ord.description?.includes(fileRecord.url)) {
+          await supabase.from('orders').update({
+            description: `${ord.description}\n\n📎 فایل پیوست: ${fileRecord.fileName} (${fileRecord.url})`,
+          }).eq('id', ord.id);
+        }
+      } catch (err) {}
+    }
 
     logBot(`File ${fileRecord.fileName} (${(fileSize / (1024 * 1024)).toFixed(2)} MB) stored locally.`);
 
@@ -1228,28 +1162,57 @@ app.get('/api/client/my-orders', async (req: Request, res: Response) => {
   }
 });
 
-// 1. Bot status & metrics
+// 1. Studio & System status & metrics
 app.get('/api/status', async (req: Request, res: Response) => {
   try {
-    const meRes = await callTelegram('getMe', {});
     const { count: ordersCount } = await supabase.from('orders').select('*', { count: 'exact', head: true });
     const { count: usersCount } = await supabase.from('users').select('*', { count: 'exact', head: true });
     const { count: pendingCount } = await supabase.from('orders').select('*', { count: 'exact', head: true }).eq('status', 'new');
+    
+    const files = loadStorageMeta();
+    const usedBytes = files.reduce((acc, f) => acc + (f.sizeBytes || 0), 0);
 
     res.json({
       success: true,
-      bot: meRes.result || null,
-      adminId: ADMIN_TELEGRAM_ID,
       supabaseConnected: true,
       metrics: {
         totalOrders: ordersCount || 0,
         totalUsers: usersCount || 0,
         pendingOrders: pendingCount || 0,
+        storageUsedMB: Number((usedBytes / (1024 * 1024)).toFixed(2)),
+        storageMaxMB: 1024,
+        storageFileCount: files.length,
       },
       recentLogs: recentBotLogs.slice(0, 30),
     });
   } catch (error: any) {
     res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Storage Link Helper
+app.post('/api/admin/storage/link', async (req: Request, res: Response) => {
+  try {
+    const { fileUrl, orderCode } = req.body;
+    if (!fileUrl || !orderCode) return res.json({ ok: false });
+    const files = loadStorageMeta();
+    const target = files.find((f) => f.url === fileUrl);
+    if (target) {
+      target.orderCode = orderCode;
+      saveStorageMeta(files);
+
+      try {
+        const { data: ord } = await supabase.from('orders').select('id, description').eq('order_code', orderCode).maybeSingle();
+        if (ord && !ord.description?.includes(target.url)) {
+          await supabase.from('orders').update({
+            description: `${ord.description}\n\n📎 فایل پیوست: ${target.fileName} (${target.url})`,
+          }).eq('id', ord.id);
+        }
+      } catch (err) {}
+    }
+    return res.json({ ok: true });
+  } catch (e) {
+    return res.json({ ok: false });
   }
 });
 
@@ -1545,25 +1508,6 @@ app.post('/api/bot/broadcast', async (req: Request, res: Response) => {
 
     logBot(`Broadcast sent to ${sentCount} users.`);
     res.json({ success: true, sentCount });
-  } catch (error: any) {
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-// 8. Bot Simulation endpoint for UI Phone tester
-app.post('/api/bot/simulate', async (req: Request, res: Response) => {
-  try {
-    const { text, callbackData, userId = 999999 } = req.body;
-    const simResponses = await handleBotIncoming({
-      chatId: userId,
-      userId,
-      text,
-      callbackData,
-      username: 'SimulatedUser',
-      firstName: 'کاربر تستی',
-      isSimulation: true,
-    });
-    res.json({ success: true, responses: simResponses });
   } catch (error: any) {
     res.status(500).json({ success: false, error: error.message });
   }

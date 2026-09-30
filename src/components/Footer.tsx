@@ -22,21 +22,12 @@ export const Footer: React.FC<FooterProps> = ({ lang }) => {
         {/* Social Links */}
         <div className="flex items-center gap-5 dir-ltr font-mono text-xs">
           <a
-            href={SOCIAL_LINKS.telegramBot}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hover:text-[#d0bcff] transition-colors"
-          >
-            @RITM_FreeLancbot
-          </a>
-          <span>·</span>
-          <a
             href={SOCIAL_LINKS.telegramChannel}
             target="_blank"
             rel="noopener noreferrer"
             className="hover:text-[#d0bcff] transition-colors"
           >
-            Telegram
+            Telegram (@RITM_FreeLancer)
           </a>
           <span>·</span>
           <a
