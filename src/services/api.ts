@@ -130,10 +130,10 @@ export async function uploadOrderMedia(payload: {
       body: JSON.stringify(payload),
     });
     const data = await res.json();
-    return { success: Boolean(data.success), error: data.error };
+    return { success: Boolean(data.success), error: data.message || data.error };
   } catch (err: any) {
     console.error('uploadOrderMedia error:', err);
-    return { success: false, error: err.message || 'خطا در ارسال فایل به تلگرام' };
+    return { success: false, error: err.message || 'خطا در ذخیره‌سازی فایل روی سرور' };
   }
 }
 

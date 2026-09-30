@@ -14,9 +14,11 @@ import {
   ArrowRight,
   ArrowLeft,
   Search,
+  FileText,
 } from 'lucide-react';
 import { Order, AuthUser, OrderStatus, ProjectType } from '../types';
 import { clientLogin, clientRegister, getClientOrders } from '../services/api';
+import { ProjectContractModal } from './ProjectContractModal';
 
 interface ClientPortalProps {
   lang: 'fa' | 'en';
@@ -47,6 +49,7 @@ export const ClientPortal: React.FC<ClientPortalProps> = ({
   // Client Orders State
   const [orders, setOrders] = useState<Order[]>([]);
   const [loadingOrders, setLoadingOrders] = useState(false);
+  const [selectedContractOrder, setSelectedContractOrder] = useState<Order | null>(null);
 
   // Fetch client orders
   const fetchClientOrders = async (userObj?: AuthUser | null, queryCode?: string) => {
@@ -558,18 +561,26 @@ export const ClientPortal: React.FC<ClientPortalProps> = ({
                   </div>
 
                   {/* Actions */}
-                  <div className="flex items-center justify-between pt-2">
+                  <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+                    <button
+                      onClick={() => setSelectedContractOrder(ord)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#d0bcff]/15 hover:bg-[#d0bcff]/25 text-[#d0bcff] border border-[#d0bcff]/30 text-xs font-semibold cursor-pointer transition-colors"
+                    >
+                      <FileText className="w-3.5 h-3.5" />
+                      <span>{lang === 'fa' ? 'فاکتور و قرارداد رسمی' : 'Official Contract & Invoice'}</span>
+                    </button>
+
                     <a
-                      href="https://t.me/RITM_FreeLancbot"
+                      href="https://t.me/RITM_FreeLancer"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 text-xs text-[#d0bcff] hover:underline"
+                      className="inline-flex items-center gap-1.5 text-xs text-[#38bdf8] hover:underline"
                     >
                       <Send className="w-3.5 h-3.5" />
-                      <span>پیگیری مستقیم در ربات تلگرام</span>
+                      <span>{lang === 'fa' ? 'کانال رسمی تلگرام' : 'Telegram Channel'}</span>
                     </a>
 
-                    <span className="text-[10px] text-[#958ea0] font-mono">
+                    <span className="text-[10px] text-[#958ea0] font-mono mr-auto">
                       آخرین بروزرسانی: {new Date(ord.updated_at).toLocaleDateString('fa-IR')}
                     </span>
                   </div>
@@ -577,6 +588,14 @@ export const ClientPortal: React.FC<ClientPortalProps> = ({
               );
             })}
           </div>
+        )}
+
+        {selectedContractOrder && (
+          <ProjectContractModal
+            order={selectedContractOrder}
+            lang={lang}
+            onClose={() => setSelectedContractOrder(null)}
+          />
         )}
       </div>
     </div>

@@ -15,8 +15,8 @@ import {
 import { AuthUser } from '../types';
 
 interface NavbarProps {
-  activeTab: 'home' | 'order' | 'simulator' | 'admin' | 'portfolio' | 'status' | 'client';
-  setActiveTab: (tab: 'home' | 'order' | 'simulator' | 'admin' | 'portfolio' | 'status' | 'client') => void;
+  activeTab: 'home' | 'order' | 'admin' | 'portfolio' | 'status' | 'client';
+  setActiveTab: (tab: 'home' | 'order' | 'admin' | 'portfolio' | 'status' | 'client') => void;
   lang: 'fa' | 'en';
   setLang: (lang: 'fa' | 'en') => void;
   pendingCount?: number;

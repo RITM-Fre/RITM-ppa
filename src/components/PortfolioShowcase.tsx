@@ -71,12 +71,12 @@ export const PortfolioShowcase: React.FC<PortfolioShowcaseProps> = ({
               {lang === 'fa' ? 'شروع پروژه جدید' : 'Start a Project'}
             </button>
             <a
-              href="https://t.me/RITM_FreeLancbot"
+              href="https://t.me/RITM_FreeLancer"
               target="_blank"
               rel="noopener noreferrer"
               className="px-5 py-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-[#e5e2e1] text-xs font-semibold transition-all inline-flex items-center gap-2"
             >
-              <span>{lang === 'fa' ? 'ربات تلگرام @RITM_FreeLancbot' : 'Telegram Bot'}</span>
+              <span>{lang === 'fa' ? 'کانال تلگرام @RITM_FreeLancer' : 'Telegram Channel'}</span>
               <ExternalLink className="w-3.5 h-3.5" />
             </a>
           </div>

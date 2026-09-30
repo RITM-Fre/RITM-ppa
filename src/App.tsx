@@ -7,7 +7,6 @@ import React, { useState, useEffect } from 'react';
 import { Navbar } from './components/Navbar';
 import { HomeView } from './components/HomeView';
 import { OrderWizard } from './components/OrderWizard';
-import { TelegramSimulator } from './components/TelegramSimulator';
 import { AdminPanel } from './components/AdminPanel';
 import { AdminLogin } from './components/AdminLogin';
 import { ClientPortal } from './components/ClientPortal';
@@ -20,7 +19,7 @@ import { Send, Shield, Lock, CheckCircle2, X } from 'lucide-react';
 import { getOrders } from './services/api';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'home' | 'order' | 'simulator' | 'admin' | 'portfolio' | 'status' | 'client'>(() => {
+  const [activeTab, setActiveTab] = useState<'home' | 'order' | 'admin' | 'portfolio' | 'status' | 'client'>(() => {
     try {
       const params = new URLSearchParams(window.location.search);
       const tab = params.get('tab');
@@ -28,7 +27,6 @@ export default function App() {
       if (tab === 'order') return 'order';
       if (tab === 'admin') return 'admin';
       if (tab === 'client') return 'client';
-      if (tab === 'simulator') return 'simulator';
       if (tab === 'status') return 'status';
       if (tab === 'portfolio') return 'portfolio';
     } catch (e) {}
@@ -60,7 +58,7 @@ export default function App() {
 
   const isAdminLoggedIn = Boolean(adminToken);
 
-  const changeTab = (tab: 'home' | 'order' | 'simulator' | 'admin' | 'portfolio' | 'status' | 'client') => {
+  const changeTab = (tab: 'home' | 'order' | 'admin' | 'portfolio' | 'status' | 'client') => {
     // If user tries to open admin or status tab without being logged in, show login modal
     if ((tab === 'admin' || tab === 'status') && !isAdminLoggedIn) {
       setShowAdminLoginModal(true);
@@ -179,7 +177,6 @@ export default function App() {
             lang={lang}
             onStartOrder={handleSelectCategoryForOrder}
             onNavigateToPortfolio={() => changeTab('portfolio')}
-            onNavigateToSimulator={() => changeTab('simulator')}
             onNavigateToClient={() => changeTab('client')}
           />
         )}
@@ -215,12 +212,7 @@ export default function App() {
           />
         )}
 
-        {/* VIEW 4: TELEGRAM BOT SIMULATOR */}
-        {activeTab === 'simulator' && (
-          <TelegramSimulator lang={lang} />
-        )}
-
-        {/* VIEW 5: ADMIN MANAGEMENT HUB (Protected: Only accessible when logged in with password Mohmah123) */}
+        {/* VIEW 4: ADMIN MANAGEMENT HUB (Protected: Only accessible when logged in with password Mohmah123) */}
         {activeTab === 'admin' && (
           isAdminLoggedIn ? (
             <AdminPanel lang={lang} onLogout={handleAdminLogout} />

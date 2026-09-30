@@ -17,12 +17,12 @@ import {
 } from 'lucide-react';
 import { ProjectType } from '../types';
 import { SERVICES, heroImage, videoImage, webImage, mobileImage } from '../data/mockData';
+import { SocialSection } from './SocialSection';
 
 interface HomeViewProps {
   lang: 'fa' | 'en';
   onStartOrder: (category?: ProjectType) => void;
   onNavigateToPortfolio: () => void;
-  onNavigateToSimulator: () => void;
   onNavigateToClient: () => void;
 }
 
@@ -86,13 +86,13 @@ export const HomeView: React.FC<HomeViewProps> = ({
           </button>
 
           <a
-            href="https://t.me/RITM_FreeLancbot"
+            href="https://t.me/RITM_FreeLancer"
             target="_blank"
             rel="noopener noreferrer"
-            className="px-5 py-3.5 rounded-xl bg-[#229ed9] hover:bg-[#229ed9]/90 text-white font-semibold text-xs sm:text-sm transition-colors flex items-center gap-2"
+            className="px-5 py-3.5 rounded-xl bg-[#229ed9] hover:bg-[#229ed9]/90 text-white font-semibold text-xs sm:text-sm transition-colors flex items-center gap-2 shadow-sm"
           >
             <Send className="w-4 h-4" />
-            <span>{lang === 'fa' ? 'ربات تلگرام ریتم' : 'Telegram Bot'}</span>
+            <span>{lang === 'fa' ? 'کانال رسمی تلگرام' : 'Telegram Channel'}</span>
           </a>
         </div>
 
@@ -255,7 +255,10 @@ export const HomeView: React.FC<HomeViewProps> = ({
         </div>
       </section>
 
-      {/* 4. TRACKING & DIRECT CHAT CTA */}
+      {/* 4. SOCIAL MEDIA CHANNELS */}
+      <SocialSection lang={lang} />
+
+      {/* 5. TRACKING & DIRECT CHAT CTA */}
       <section className="max-w-4xl mx-auto px-4">
         <div className="rounded-2xl p-6 sm:p-8 border border-white/10 bg-[#12141c] flex flex-col sm:flex-row items-center justify-between gap-6">
           <div className="space-y-1 text-right">

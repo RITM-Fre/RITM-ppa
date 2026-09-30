@@ -1,6 +1,7 @@
 import express, { Request, Response } from 'express';
 import dotenv from 'dotenv';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { createClient } from '@supabase/supabase-js';
 
@@ -23,8 +24,53 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
 });
 
 const app = express();
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+app.use(express.json({ limit: '100mb' }));
+app.use(express.urlencoded({ extended: true, limit: '100mb' }));
+
+// 1 GB Local Storage Setup
+const UPLOADS_DIR = path.join(__dirname, 'uploads');
+if (!fs.existsSync(UPLOADS_DIR)) {
+  fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+}
+app.use('/uploads', express.static(UPLOADS_DIR));
+
+// 1 GB Total Storage Limit (in bytes)
+const MAX_STORAGE_BYTES = 1024 * 1024 * 1024; // 1,073,741,824 bytes = 1 GB
+const META_FILE = path.join(__dirname, 'uploads_meta.json');
+
+export interface StoredFileRecord {
+  id: string;
+  orderCode: string;
+  clientName: string;
+  contact: string;
+  fileName: string;
+  storedFileName: string;
+  fileType: string;
+  sizeBytes: number;
+  uploadDate: string;
+  caption?: string;
+  url: string;
+}
+
+function loadStorageMeta(): StoredFileRecord[] {
+  try {
+    if (fs.existsSync(META_FILE)) {
+      const content = fs.readFileSync(META_FILE, 'utf-8');
+      return JSON.parse(content);
+    }
+  } catch (e) {
+    console.error('Error loading storage meta:', e);
+  }
+  return [];
+}
+
+function saveStorageMeta(records: StoredFileRecord[]) {
+  try {
+    fs.writeFileSync(META_FILE, JSON.stringify(records, null, 2), 'utf-8');
+  } catch (e) {
+    console.error('Error saving storage meta:', e);
+  }
+}
 
 // In-memory conversation state for Telegram bot users
 interface UserSession {
@@ -934,48 +980,10 @@ async function startTelegramPoller() {
   }
 }
 
-// Start polling in background
-startTelegramPoller();
+// Telegram Poller disabled as requested (Pure Web Application mode)
+// startTelegramPoller();
 
-// --- TELEGRAM WEBHOOK ROUTE (For serverless platforms like Vercel/Glitch) ---
-app.post('/api/telegram-webhook', async (req: Request, res: Response) => {
-  try {
-    const update = req.body;
-    if (update?.message) {
-      const msg = update.message;
-      await handleBotIncoming({
-        chatId: msg.chat.id,
-        userId: msg.from.id,
-        text: msg.text || '',
-        username: msg.from.username,
-        firstName: msg.from.first_name,
-        lastName: msg.from.last_name,
-        photo: msg.photo,
-        video: msg.video,
-        document: msg.document,
-        voice: msg.voice,
-        caption: msg.caption,
-      });
-    } else if (update?.callback_query) {
-      const cb = update.callback_query;
-      await callTelegram('answerCallbackQuery', { callback_query_id: cb.id });
-      await handleBotIncoming({
-        chatId: cb.message?.chat?.id || cb.from.id,
-        userId: cb.from.id,
-        callbackData: cb.data,
-        username: cb.from.username,
-        firstName: cb.from.first_name,
-        lastName: cb.from.last_name,
-      });
-    }
-    return res.json({ ok: true });
-  } catch (err) {
-    console.error('Webhook error:', err);
-    return res.status(500).json({ error: String(err) });
-  }
-});
-
-// Media Forwarder: Upload photo/video from website directly to Telegram Admin!
+// --- MEDIA STORAGE & UPLOAD (1 GB Quota on Server) ---
 app.post('/api/upload-media', async (req: Request, res: Response) => {
   try {
     const { orderCode, clientName, contact, fileName, fileType, fileBase64, caption } = req.body;
@@ -985,45 +993,118 @@ app.post('/api/upload-media', async (req: Request, res: Response) => {
 
     const base64Data = fileBase64.replace(/^data:[^;]+;base64,/, '');
     const buffer = Buffer.from(base64Data, 'base64');
-    const blob = new Blob([buffer], { type: fileType || 'application/octet-stream' });
+    const fileSize = buffer.length;
 
-    const formData = new FormData();
-    formData.append('chat_id', String(ADMIN_TELEGRAM_ID));
+    const currentFiles = loadStorageMeta();
+    const currentUsedBytes = currentFiles.reduce((acc, f) => acc + (f.sizeBytes || 0), 0);
 
-    const captionText =
-      `📎 <b>فایل جدید ارسالی از وب‌سایت استودیو ریتم!</b>\n\n` +
-      `🔖 <b>کد رهگیری سفارش:</b> <code>${orderCode || 'ندارد'}</code>\n` +
-      `👤 <b>مشتری:</b> ${clientName || 'کاربر وب‌سایت'}\n` +
-      `📞 <b>راه ارتباطی:</b> ${contact || 'نامشخص'}\n` +
-      `📁 <b>نام فایل:</b> ${fileName || 'file'}\n` +
-      (caption ? `📝 <b>توضیحات:</b> ${caption}\n` : '') +
-      `──────────────\n` +
-      `🌐 ارسال شده از درگاه آنلاین استودیو ریتم`;
-
-    formData.append('caption', captionText);
-    formData.append('parse_mode', 'HTML');
-
-    let method = 'sendDocument';
-    if (fileType && fileType.startsWith('image/')) {
-      method = 'sendPhoto';
-      formData.append('photo', blob, fileName || 'photo.jpg');
-    } else if (fileType && fileType.startsWith('video/')) {
-      method = 'sendVideo';
-      formData.append('video', blob, fileName || 'video.mp4');
-    } else {
-      formData.append('document', blob, fileName || 'file.bin');
+    if (currentUsedBytes + fileSize > MAX_STORAGE_BYTES) {
+      return res.status(400).json({
+        success: false,
+        message: 'ظرفیت فضای ذخیره‌سازی سایت (۱ گیگابایت) پر شده است. لطفاً فایل‌های قدیمی را از پنل ادمین حذف فرمایید.',
+      });
     }
 
-    const tgRes = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/${method}`, {
-      method: 'POST',
-      body: formData,
+    const safeOriginalName = (fileName || 'file.bin').replace(/[^a-zA-Z0-9._-]/g, '_');
+    const storedFileName = `${Date.now()}_${safeOriginalName}`;
+    const filePath = path.join(UPLOADS_DIR, storedFileName);
+
+    fs.writeFileSync(filePath, buffer);
+
+    const fileRecord: StoredFileRecord = {
+      id: Math.random().toString(36).substring(2, 10),
+      orderCode: orderCode || 'بدون کد',
+      clientName: clientName || 'کاربر سایت',
+      contact: contact || '-',
+      fileName: fileName || safeOriginalName,
+      storedFileName,
+      fileType: fileType || 'application/octet-stream',
+      sizeBytes: fileSize,
+      uploadDate: new Date().toISOString(),
+      caption: caption || '',
+      url: `/uploads/${storedFileName}`,
+    };
+
+    currentFiles.unshift(fileRecord);
+    saveStorageMeta(currentFiles);
+
+    logBot(`File ${fileRecord.fileName} (${(fileSize / (1024 * 1024)).toFixed(2)} MB) stored locally.`);
+
+    return res.json({
+      success: true,
+      file: fileRecord,
+      storage: {
+        usedBytes: currentUsedBytes + fileSize,
+        maxBytes: MAX_STORAGE_BYTES,
+        usedMB: Number(((currentUsedBytes + fileSize) / (1024 * 1024)).toFixed(2)),
+        maxMB: 1024,
+        usedPercent: Number((((currentUsedBytes + fileSize) / MAX_STORAGE_BYTES) * 100).toFixed(2)),
+      },
     });
-    const result = await tgRes.json();
-    logBot(`Uploaded media for order ${orderCode || 'N/A'} forwarded directly to Telegram Admin.`);
-    return res.json({ success: true, result });
   } catch (error: any) {
-    console.error('Error forwarding media to Telegram:', error);
+    console.error('Error saving uploaded media locally:', error);
     return res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Admin Storage List
+app.get('/api/admin/storage', (req: Request, res: Response) => {
+  try {
+    const files = loadStorageMeta();
+    const usedBytes = files.reduce((acc, f) => acc + (f.sizeBytes || 0), 0);
+    return res.json({
+      success: true,
+      files,
+      usedBytes,
+      maxBytes: MAX_STORAGE_BYTES,
+      usedMB: Number((usedBytes / (1024 * 1024)).toFixed(2)),
+      maxMB: 1024,
+      usedPercent: Number(((usedBytes / MAX_STORAGE_BYTES) * 100).toFixed(2)),
+      fileCount: files.length,
+    });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Admin Storage Delete File
+app.delete('/api/admin/storage/:id', (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    let files = loadStorageMeta();
+    const target = files.find((f) => f.id === id);
+    if (!target) {
+      return res.status(404).json({ success: false, message: 'فایل یافت نشد.' });
+    }
+
+    const filePath = path.join(UPLOADS_DIR, target.storedFileName);
+    if (fs.existsSync(filePath)) {
+      try {
+        fs.unlinkSync(filePath);
+      } catch (e) {
+        console.warn('File already unlinked:', e);
+      }
+    }
+
+    files = files.filter((f) => f.id !== id);
+    saveStorageMeta(files);
+
+    const usedBytes = files.reduce((acc, f) => acc + (f.sizeBytes || 0), 0);
+
+    return res.json({
+      success: true,
+      message: 'فایل با موفقیت حذف شد و فضای ذخیره‌سازی آزاد گردید.',
+      storage: {
+        usedBytes,
+        maxBytes: MAX_STORAGE_BYTES,
+        usedMB: Number((usedBytes / (1024 * 1024)).toFixed(2)),
+        maxMB: 1024,
+        usedPercent: Number(((usedBytes / MAX_STORAGE_BYTES) * 100).toFixed(2)),
+        fileCount: files.length,
+      },
+    });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message });
   }
 });
 

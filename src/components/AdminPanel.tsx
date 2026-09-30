@@ -17,9 +17,27 @@ import {
   Trash2,
   Settings,
   Megaphone,
+  HardDrive,
+  Download,
+  FolderOpen,
+  Sparkles,
 } from 'lucide-react';
 import { Order, User, OrderStatus } from '../types';
 import { getOrders, getUsers, updateOrderStatus, sendMessage, deleteUser } from '../services/api';
+
+interface StorageFile {
+  id: string;
+  orderCode: string;
+  clientName: string;
+  contact: string;
+  fileName: string;
+  storedFileName: string;
+  fileType: string;
+  sizeBytes: number;
+  uploadDate: string;
+  caption?: string;
+  url: string;
+}
 
 interface AdminPanelProps {
   lang: 'fa' | 'en';
@@ -45,8 +63,15 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ lang, onLogout }) => {
   const [isSendingMessage, setIsSendingMessage] = useState(false);
   const [messageSuccess, setMessageSuccess] = useState('');
 
-  // Active view inside admin: 'orders' | 'users' | 'settings'
-  const [adminSubTab, setAdminSubTab] = useState<'orders' | 'users' | 'settings'>('orders');
+  // Active view inside admin: 'orders' | 'users' | 'storage' | 'settings'
+  const [adminSubTab, setAdminSubTab] = useState<'orders' | 'users' | 'storage' | 'settings'>('orders');
+
+  // Storage Management State (1 GB Total)
+  const [storageFiles, setStorageFiles] = useState<StorageFile[]>([]);
+  const [storageUsedMB, setStorageUsedMB] = useState(0);
+  const [storageUsedPercent, setStorageUsedPercent] = useState(0);
+  const [storageLoading, setStorageLoading] = useState(false);
+  const [fileDeletingId, setFileDeletingId] = useState<string | null>(null);
 
   // User Deletion state
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
@@ -81,9 +106,56 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ lang, onLogout }) => {
     }
   };
 
+  const fetchStorageData = async () => {
+    setStorageLoading(true);
+    try {
+      const res = await fetch('/api/admin/storage');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success) {
+          setStorageFiles(data.files || []);
+          setStorageUsedMB(data.usedMB || 0);
+          setStorageUsedPercent(data.usedPercent || 0);
+        }
+      }
+    } catch (e) {
+      console.error('Failed to load storage data:', e);
+    } finally {
+      setStorageLoading(false);
+    }
+  };
+
+  const handleDeleteStorageFile = async (id: string) => {
+    setFileDeletingId(id);
+    try {
+      const res = await fetch(`/api/admin/storage/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success) {
+          setStorageFiles((prev) => prev.filter((f) => f.id !== id));
+          if (data.storage) {
+            setStorageUsedMB(data.storage.usedMB || 0);
+            setStorageUsedPercent(data.storage.usedPercent || 0);
+          }
+        }
+      }
+    } catch (e) {
+      console.error('Failed to delete storage file:', e);
+    } finally {
+      setFileDeletingId(null);
+    }
+  };
+
   useEffect(() => {
     fetchData();
+    fetchStorageData();
   }, [statusFilter]);
+
+  useEffect(() => {
+    if (adminSubTab === 'storage') {
+      fetchStorageData();
+    }
+  }, [adminSubTab]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -230,6 +302,15 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ lang, onLogout }) => {
               }`}
             >
               {lang === 'fa' ? `کاربران سایت (${users.length})` : `Users (${users.length})`}
+            </button>
+            <button
+              onClick={() => setAdminSubTab('storage')}
+              className={`px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer ${
+                adminSubTab === 'storage' ? 'bg-[#d0bcff] text-[#131313] font-bold' : 'text-[#958ea0] hover:text-white'
+              }`}
+            >
+              <HardDrive className="w-3.5 h-3.5" />
+              <span>{lang === 'fa' ? `حافظه (${storageUsedMB} MB)` : `Storage (${storageUsedMB} MB)`}</span>
             </button>
             <button
               onClick={() => setAdminSubTab('settings')}
@@ -589,6 +670,158 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ lang, onLogout }) => {
                 ذخیره و ثبت پیام
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* SUBTAB 4: STORAGE MANAGEMENT (1 GB QUOTA) */}
+      {adminSubTab === 'storage' && (
+        <div className="space-y-6">
+          {/* Storage Meter Card */}
+          <div className="glass-panel rounded-2xl p-6 border border-white/10 space-y-5 text-right">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <h3 className="text-base font-bold text-white flex items-center gap-2">
+                  <HardDrive className="w-5 h-5 text-[#d0bcff]" />
+                  <span>مدیریت فضای ذخیره‌سازی فایل‌های سایت (سقف ۱ گیگابایت)</span>
+                </h3>
+                <p className="text-xs text-[#8c94a4] mt-1">
+                  فایل‌ها، ویدیوها و اسناد ارسالی کارفرمایان در این بخش نگهداری شده و هر زمان که بخواهید می‌توانید دستی آن‌ها را حذف کنید.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={fetchStorageData}
+                  disabled={storageLoading}
+                  className="px-3.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs text-white flex items-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${storageLoading ? 'animate-spin' : ''}`} />
+                  <span>بروزرسانی وضعیت</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Storage Progress Bar */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-mono text-white font-bold">
+                  {storageUsedMB} MB مصرف شده از ۱۰۲۴ MB (۱.۰۰ GB)
+                </span>
+                <span className={`font-mono font-bold ${storageUsedPercent > 85 ? 'text-red-400' : 'text-[#a3e635]'}`}>
+                  {storageUsedPercent}% ظرفیت
+                </span>
+              </div>
+
+              <div className="w-full h-3 rounded-full bg-black/60 border border-white/10 overflow-hidden p-0.5">
+                <div
+                  className={`h-full rounded-full transition-all duration-500 ${
+                    storageUsedPercent > 85
+                      ? 'bg-gradient-to-r from-orange-500 to-red-500'
+                      : 'bg-gradient-to-r from-[#d0bcff] to-[#38bdf8]'
+                  }`}
+                  style={{ width: `${Math.min(100, Math.max(2, storageUsedPercent))}%` }}
+                />
+              </div>
+
+              <div className="flex items-center justify-between text-[11px] text-[#8c94a4]">
+                <span>فضای آزاد باقیمانده: {(1024 - storageUsedMB).toFixed(2)} MB</span>
+                <span>تعداد کل فایل‌های ذخیره‌شده: {storageFiles.length} فایل</span>
+              </div>
+            </div>
+
+            {/* Platform Storage Information Banner */}
+            <div className="p-4 rounded-xl bg-white/[0.02] border border-white/10 text-xs space-y-1.5 leading-relaxed text-[#9da3af]">
+              <div className="text-white font-bold flex items-center gap-1.5">
+                <Sparkles className="w-4 h-4 text-[#ffb869]" />
+                <span>پاسخ فنی درباره ظرفیت و پلتفرم بک‌اند:</span>
+              </div>
+              <p>
+                پلتفرم ابری سرور شما فضای محلی و موقت تا سقف <strong>۱ گیگابایت</strong> را به راحتی نگهداری می‌کند. فایل‌ها مستقیماً روی سرور سایت ذخیره می‌شوند و به محض اینکه دکمه «حذف» را بزنید، بلافاصله از حافظه سرور پاک شده و فضا برای سفارشات جدید آزاد می‌شود.
+              </p>
+            </div>
+          </div>
+
+          {/* Files Table */}
+          <div className="glass-panel rounded-2xl border border-white/10 overflow-hidden shadow-xl">
+            <div className="p-4 border-b border-white/10 flex items-center justify-between text-right">
+              <div>
+                <h4 className="text-sm font-bold text-white">لیست فایل‌های آپلود شده توسط کاربران</h4>
+                <p className="text-[11px] text-[#8c94a4]">امکان دانلود، پیش‌نمایش و حذف تک‌تک فایل‌ها</p>
+              </div>
+              <span className="text-xs font-mono text-[#d0bcff]">{storageFiles.length} فایل</span>
+            </div>
+
+            {storageFiles.length === 0 ? (
+              <div className="p-10 text-center text-xs text-[#8c94a4] space-y-2">
+                <FolderOpen className="w-10 h-10 text-white/20 mx-auto" />
+                <p>هیچ فایلی در حال حاضر آپلود نشده و حافظه ۱ گیگابایتی سایت کاملاً آزاد است.</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-right text-xs">
+                  <thead>
+                    <tr className="bg-black/30 border-b border-white/10 text-[#8c94a4]">
+                      <th className="py-3 px-4">نام فایل</th>
+                      <th className="py-3 px-4">کد سفارش</th>
+                      <th className="py-3 px-4">کاربر / تماس</th>
+                      <th className="py-3 px-4">حجم فایل</th>
+                      <th className="py-3 px-4">تاریخ بارگذاری</th>
+                      <th className="py-3 px-4">عملیات</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/[0.06]">
+                    {storageFiles.map((file) => (
+                      <tr key={file.id} className="hover:bg-white/[0.02]">
+                        <td className="py-3 px-4">
+                          <div className="font-semibold text-white max-w-[180px] truncate" title={file.fileName}>
+                            {file.fileName}
+                          </div>
+                          <span className="text-[10px] text-[#8c94a4] font-mono">{file.fileType}</span>
+                        </td>
+                        <td className="py-3 px-4 font-mono text-[#d0bcff] font-bold">
+                          {file.orderCode}
+                        </td>
+                        <td className="py-3 px-4">
+                          <div className="text-white">{file.clientName}</div>
+                          <div className="text-[10px] text-[#8c94a4] font-mono">{file.contact}</div>
+                        </td>
+                        <td className="py-3 px-4 font-mono text-[#a3e635] font-semibold">
+                          {(file.sizeBytes / (1024 * 1024)).toFixed(2)} MB
+                        </td>
+                        <td className="py-3 px-4 font-mono text-[#8c94a4]">
+                          {new Date(file.uploadDate).toLocaleDateString('fa-IR')}
+                        </td>
+                        <td className="py-3 px-4">
+                          <div className="flex items-center gap-2">
+                            <a
+                              href={file.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="p-1.5 px-2.5 rounded-lg bg-white/5 hover:bg-white/10 text-white border border-white/10 text-xs flex items-center gap-1 cursor-pointer transition-colors"
+                              title="مشاهده یا دانلود فایل"
+                            >
+                              <Download className="w-3.5 h-3.5 text-[#38bdf8]" />
+                              <span>دانلود</span>
+                            </a>
+
+                            <button
+                              onClick={() => handleDeleteStorageFile(file.id)}
+                              disabled={fileDeletingId === file.id}
+                              className="p-1.5 px-2.5 rounded-lg bg-red-500/10 hover:bg-red-500/25 text-red-400 border border-red-500/30 text-xs flex items-center gap-1 cursor-pointer transition-colors disabled:opacity-50"
+                              title="حذف این فایل از دیسک سرور"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                              <span>{fileDeletingId === file.id ? '...' : 'حذف'}</span>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         </div>
       )}

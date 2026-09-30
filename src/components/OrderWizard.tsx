@@ -19,9 +19,11 @@ import {
   Paperclip,
   Lock,
   User,
+  FileText,
 } from 'lucide-react';
 import { ProjectType, Order, AuthUser } from '../types';
 import { createOrder, uploadOrderMedia } from '../services/api';
+import { ProjectContractModal } from './ProjectContractModal';
 
 interface OrderWizardProps {
   lang: 'fa' | 'en';
@@ -55,6 +57,7 @@ export const OrderWizard: React.FC<OrderWizardProps> = ({
   const [submittedOrder, setSubmittedOrder] = useState<Order | null>(null);
   const [errorMsg, setErrorMsg] = useState('');
   const [copied, setCopied] = useState(false);
+  const [showContractModal, setShowContractModal] = useState(false);
 
   // Check if running inside Telegram Mini App
   useEffect(() => {
@@ -321,14 +324,22 @@ export const OrderWizard: React.FC<OrderWizardProps> = ({
 
           {/* Action CTAs */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+            <button
+              onClick={() => setShowContractModal(true)}
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-[#d0bcff] text-[#131313] font-bold text-sm hover:bg-[#d0bcff]/90 transition-all shadow-lg hover:shadow-[#d0bcff]/20 cursor-pointer"
+            >
+              <FileText className="w-4 h-4" />
+              <span>{lang === 'fa' ? 'مشاهده و چاپ فاکتور و قرارداد رسمی' : 'View & Print Official Contract'}</span>
+            </button>
+
             <a
-              href="https://t.me/RITM_FreeLancbot"
+              href="https://t.me/RITM_FreeLancer"
               target="_blank"
               rel="noopener noreferrer"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-[#d0bcff] text-[#131313] font-semibold text-sm hover:bg-[#d0bcff]/90 transition-all shadow-lg hover:shadow-[#d0bcff]/20"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-[#229ed9] hover:bg-[#229ed9]/90 text-white font-semibold text-sm transition-all shadow-md cursor-pointer"
             >
               <Send className="w-4 h-4" />
-              <span>{lang === 'fa' ? 'پیگیری در ربات تلگرام' : 'Track in Telegram Bot'}</span>
+              <span>{lang === 'fa' ? 'کانال رسمی تلگرام' : 'Telegram Channel'}</span>
             </a>
 
             <button
@@ -337,11 +348,19 @@ export const OrderWizard: React.FC<OrderWizardProps> = ({
                 setStep(1);
                 setDescription('');
               }}
-              className="w-full sm:w-auto px-6 py-3 rounded-xl bg-white/5 hover:bg-white/10 text-sm font-medium text-[#e5e2e1] transition-all border border-white/10"
+              className="w-full sm:w-auto px-5 py-3 rounded-xl bg-white/5 hover:bg-white/10 text-sm font-medium text-[#e5e2e1] transition-all border border-white/10 cursor-pointer"
             >
               {lang === 'fa' ? 'ثبت سفارش جدید' : 'Submit Another Order'}
             </button>
           </div>
+
+          {showContractModal && submittedOrder && (
+            <ProjectContractModal
+              order={submittedOrder}
+              lang={lang}
+              onClose={() => setShowContractModal(false)}
+            />
+          )}
         </div>
       </div>
     );
