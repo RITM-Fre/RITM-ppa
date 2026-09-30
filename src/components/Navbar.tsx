@@ -49,41 +49,38 @@ export const Navbar: React.FC<NavbarProps> = ({
   return (
     <header
       className={[
-        // 🎯 fixed → همیشه چسبیده به بالای صفحه و با کاربر پایین میاد
         'fixed top-0 left-0 right-0 z-50 w-full',
-        'px-3 sm:px-6 pointer-events-none',
+        'px-2 sm:px-6 pointer-events-none', // 👈 padding کمتر در موبایل
         'transition-all duration-500 [transition-timing-function:cubic-bezier(0.22,1,0.36,1)]',
-        scrolled ? 'pt-2 pb-2' : 'pt-4 pb-3',
+        scrolled ? 'pt-1.5 pb-1.5 sm:pt-2 sm:pb-2' : 'pt-3 pb-2 sm:pt-4 sm:pb-3',
       ].join(' ')}
     >
       <div
         className={[
           'pointer-events-auto mx-auto flex items-center justify-between',
-          'rounded-full border backdrop-blur-2xl',
+          'rounded-full border backdrop-blur-2xl gap-2', // 👈 gap برای فاصله‌ی مطمئن
           'transition-[max-width,height,padding,background-color,border-color,box-shadow]',
           'duration-500 [transition-timing-function:cubic-bezier(0.22,1,0.36,1)]',
           scrolled
-            ? // ── کوچیک و شناور
-              'max-w-4xl h-12 px-3 sm:px-4 ' +
-              'bg-[#0a0c14]/85 border-white/[0.12] ' +
+            ? 'max-w-4xl h-11 sm:h-12 px-2 sm:px-4 ' +
+              'bg-[#0a0c14]/90 border-white/[0.12] ' +
               'shadow-[0_10px_40px_-8px_rgba(0,0,0,0.75),0_0_0_1px_rgba(139,92,246,0.08),inset_0_1px_0_rgba(255,255,255,0.09)]'
-            : // ── بزرگ و پرحال
-              'max-w-7xl h-16 px-4 sm:px-6 ' +
-              'bg-[#0e1017]/55 border-white/[0.07] ' +
+            : 'max-w-7xl h-14 sm:h-16 px-3 sm:px-6 ' +
+              'bg-[#0e1017]/70 border-white/[0.07] ' +
               'shadow-[0_4px_24px_-6px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.05)]',
         ].join(' ')}
       >
         {/* ─────────── Brand / Logo ─────────── */}
         <div
           onClick={() => setActiveTab('home')}
-          className="flex items-center gap-2.5 cursor-pointer select-none group shrink-0"
+          className="flex items-center gap-2 cursor-pointer select-none group shrink min-w-0"
         >
           <div
             className={[
               'relative rounded-full overflow-hidden border border-white/20 bg-black/60',
-              'flex items-center justify-center transition-all duration-500',
+              'flex items-center justify-center transition-all duration-500 shrink-0',
               'group-hover:scale-105 group-hover:border-[#d0bcff]/80 group-hover:shadow-[0_0_18px_rgba(208,188,255,0.4)]',
-              scrolled ? 'w-7 h-7 p-0.5' : 'w-9 h-9 p-1',
+              scrolled ? 'w-6 h-6 sm:w-7 sm:h-7 p-0.5' : 'w-8 h-8 sm:w-9 sm:h-9 p-0.5 sm:p-1',
             ].join(' ')}
           >
             <img
@@ -91,24 +88,24 @@ export const Navbar: React.FC<NavbarProps> = ({
               alt="RITM"
               className="w-full h-full object-contain"
             />
-            <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/15 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
           </div>
 
-          <div className="flex items-center gap-1.5 overflow-hidden">
+          <div className="flex items-center gap-1.5 min-w-0">
+            {/* 👇 متن برند فقط از sm به بالا نشون داده می‌شه */}
             <span
               className={[
-                'font-extrabold tracking-tight text-white whitespace-nowrap',
+                'hidden sm:inline font-extrabold tracking-tight text-white whitespace-nowrap',
                 'group-hover:text-[#d0bcff] transition-all duration-500',
                 scrolled ? 'text-sm' : 'text-base',
               ].join(' ')}
             >
               {lang === 'fa' ? 'استودیو ریتم' : 'RITM Studio'}
             </span>
-            <span className="w-1.5 h-1.5 rounded-full bg-[#a3e635] shadow-[0_0_8px_#a3e635] animate-pulse" />
+            <span className="w-1.5 h-1.5 rounded-full bg-[#a3e635] shadow-[0_0_8px_#a3e635] animate-pulse shrink-0" />
           </div>
         </div>
 
-        {/* ─────────── Center Nav (Desktop) ─────────── */}
+        {/* ─────────── Center Nav (Desktop only) ─────────── */}
         <nav
           className={[
             'hidden md:flex items-center gap-0.5 rounded-full',
@@ -184,14 +181,18 @@ export const Navbar: React.FC<NavbarProps> = ({
         </nav>
 
         {/* ─────────── Right Actions ─────────── */}
-        <div className="flex items-center gap-1.5 shrink-0">
+        <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
+          {/* 👇 دکمه‌ی کاربر: در موبایل فقط آیکون */}
           {currentUser ? (
             <button
               onClick={() => setActiveTab('client')}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-white/[0.04] border border-white/10 text-xs text-[#d0bcff] font-medium hover:bg-white/[0.08] hover:border-[#d0bcff]/40 transition-all cursor-pointer"
+              className="flex items-center gap-1.5 p-1.5 sm:px-2.5 sm:py-1.5 rounded-full bg-white/[0.04] border border-white/10 text-xs text-[#d0bcff] font-medium hover:bg-white/[0.08] hover:border-[#d0bcff]/40 transition-all cursor-pointer"
+              title={currentUser.username}
             >
               <User className="w-3.5 h-3.5" strokeWidth={1.75} />
-              <span className="max-w-[80px] truncate">{currentUser.username}</span>
+              <span className="hidden sm:inline max-w-[80px] truncate">
+                {currentUser.username}
+              </span>
             </button>
           ) : (
             <button
@@ -216,20 +217,22 @@ export const Navbar: React.FC<NavbarProps> = ({
             </button>
           )}
 
+          {/* 👇 دکمه‌ی زبان: در موبایل فقط آیکون */}
           <button
             onClick={() => setLang(lang === 'fa' ? 'en' : 'fa')}
-            className="flex items-center gap-1 px-2.5 py-1.5 rounded-full border border-white/10 hover:border-white/25 text-xs font-mono text-[#9da3af] hover:text-white transition-all bg-white/[0.02] cursor-pointer"
+            className="flex items-center gap-1 p-1.5 sm:px-2.5 sm:py-1.5 rounded-full border border-white/10 hover:border-white/25 text-xs font-mono text-[#9da3af] hover:text-white transition-all bg-white/[0.02] cursor-pointer"
             title={lang === 'fa' ? 'تغییر زبان' : 'Switch Language'}
           >
             <Globe className="w-3.5 h-3.5" strokeWidth={1.75} />
-            <span>{lang === 'fa' ? 'EN' : 'فا'}</span>
+            <span className="hidden sm:inline">{lang === 'fa' ? 'EN' : 'فا'}</span>
           </button>
 
+          {/* 👇 دکمه‌ی تلگرام: در موبایل فقط آیکون */}
           <a
             href="https://t.me/RITM_FreeLancer"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-[#229ed9] to-[#0088cc] border border-[#38bdf8]/40 text-white text-xs font-semibold shadow-[0_4px_18px_rgba(34,158,217,0.35)] hover:shadow-[0_6px_26px_rgba(34,158,217,0.55)] hover:scale-[1.03] transition-all cursor-pointer whitespace-nowrap active:scale-95"
+            className="inline-flex items-center gap-1.5 p-1.5 sm:px-3 sm:py-1.5 rounded-full bg-gradient-to-r from-[#229ed9] to-[#0088cc] border border-[#38bdf8]/40 text-white text-xs font-semibold shadow-[0_4px_18px_rgba(34,158,217,0.35)] hover:shadow-[0_6px_26px_rgba(34,158,217,0.55)] hover:scale-[1.03] transition-all cursor-pointer whitespace-nowrap active:scale-95"
             title="کانال رسمی تلگرام استودیو ریتم"
           >
             <Send className="w-3.5 h-3.5" strokeWidth={1.75} />
@@ -244,11 +247,12 @@ export const Navbar: React.FC<NavbarProps> = ({
       <div
         className={[
           'md:hidden pointer-events-auto mt-2 mx-auto',
-          'rounded-full bg-[#0c0e17]/90 backdrop-blur-xl border border-white/15',
+          'rounded-full bg-[#0c0e17]/95 backdrop-blur-xl border border-white/15',
           'shadow-[0_10px_30px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.1)]',
-          'flex items-center justify-around text-xs',
+          'flex items-center justify-center gap-0.5 text-xs',
           'transition-all duration-500',
-          scrolled ? 'max-w-[280px] p-0.5' : 'max-w-sm p-1',
+          'w-fit max-w-[95vw]', // 👈 عرض بر اساس محتوا، ولی حداکثر ۹۵٪ صفحه
+          scrolled ? 'p-0.5' : 'p-1',
         ].join(' ')}
       >
         {[
@@ -264,16 +268,28 @@ export const Navbar: React.FC<NavbarProps> = ({
               key={item.key}
               onClick={() => setActiveTab(item.key)}
               className={[
-                'flex items-center gap-1 px-3 py-1.5 rounded-full transition-all cursor-pointer',
+                'flex items-center gap-1 rounded-full transition-all cursor-pointer shrink-0',
+                scrolled ? 'px-2 py-1' : 'px-2.5 py-1.5',
                 isActive
                   ? item.accent
                     ? 'bg-[#d0bcff] text-[#0d0f17] font-bold shadow-[0_0_14px_rgba(208,188,255,0.4)]'
                     : 'bg-white/15 text-white font-bold shadow-sm'
                   : 'text-[#9da3af] hover:text-white',
               ].join(' ')}
+              title={lang === 'fa' ? item.fa : item.en}
             >
-              <Icon className="w-3.5 h-3.5" strokeWidth={1.75} />
-              <span>{lang === 'fa' ? item.fa : item.en}</span>
+              <Icon className="w-3.5 h-3.5 shrink-0" strokeWidth={1.75} />
+              {/* 👇 متن فقط برای تب فعال، و فقط از ۳۶۰px به بالا */}
+              <span
+                className={[
+                  'whitespace-nowrap overflow-hidden transition-all duration-300',
+                  isActive
+                    ? 'hidden min-[360px]:inline max-w-[60px] opacity-100'
+                    : 'hidden',
+                ].join(' ')}
+              >
+                {lang === 'fa' ? item.fa : item.en}
+              </span>
             </button>
           );
         })}
@@ -282,17 +298,17 @@ export const Navbar: React.FC<NavbarProps> = ({
           <button
             onClick={() => setActiveTab('admin')}
             className={[
-              'flex items-center gap-1 px-2.5 py-1.5 rounded-full transition-all cursor-pointer',
+              'flex items-center gap-1 p-1.5 rounded-full transition-all cursor-pointer shrink-0',
               activeTab === 'admin' ? 'text-[#d0bcff] font-bold' : 'text-[#9da3af]',
             ].join(' ')}
+            title="ادمین"
           >
             <Shield className="w-3.5 h-3.5" strokeWidth={1.75} />
-            <span className="w-1.5 h-1.5 rounded-full bg-[#a3e635]" />
           </button>
         ) : (
           <button
             onClick={onOpenAdminLogin}
-            className="p-1.5 rounded-full text-[#9da3af] hover:text-white transition-colors cursor-pointer"
+            className="p-1.5 rounded-full text-[#9da3af] hover:text-white transition-colors cursor-pointer shrink-0"
             title="ورود مدیریت"
           >
             <Lock className="w-3.5 h-3.5 text-[#ffb869]" strokeWidth={1.75} />
