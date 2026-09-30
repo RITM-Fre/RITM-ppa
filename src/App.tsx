@@ -13,6 +13,7 @@ import { ClientPortal } from './components/ClientPortal';
 import { PortfolioShowcase } from './components/PortfolioShowcase';
 import { BotHealthTerminal } from './components/BotHealthTerminal';
 import { Footer } from './components/Footer';
+import { IntroVideo } from './components/IntroVideo'; // 👈 اضافه شد
 import { ProjectType, Order, AuthUser } from './types';
 import { Send, Shield, Lock, CheckCircle2, X } from 'lucide-react';
 
@@ -37,6 +38,22 @@ export default function App() {
   const [preselectedCategory, setPreselectedCategory] = useState<ProjectType>('video');
   const [pendingCount, setPendingCount] = useState<number>(0);
   const [showAdminLoginModal, setShowAdminLoginModal] = useState<boolean>(false);
+
+  // 🎬 Intro Video State — فقط یک بار در هر سشن نمایش داده می‌شود
+  const [showIntro, setShowIntro] = useState<boolean>(() => {
+    try {
+      return !sessionStorage.getItem('ritm_intro_watched');
+    } catch (e) {
+      return true;
+    }
+  });
+
+  const handleIntroClose = () => {
+    setShowIntro(false);
+    try {
+      sessionStorage.setItem('ritm_intro_watched', 'true');
+    } catch (e) {}
+  };
 
   // Authentication states
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(() => {
@@ -148,6 +165,14 @@ export default function App() {
       dir={lang === 'fa' ? 'rtl' : 'ltr'}
       className="min-h-screen flex flex-col bg-[#0b0c10] text-[#f1f2f6] relative overflow-hidden font-sans"
     >
+      {/* 🎬 Intro Video Overlay — بالای همه‌چیز */}
+      {showIntro && (
+        <IntroVideo
+          src={`${import.meta.env.BASE_URL}videos/intro.mp4`}
+          onClose={handleIntroClose}
+        />
+      )}
+
       {/* Top Navigation */}
       <Navbar
         activeTab={activeTab}
