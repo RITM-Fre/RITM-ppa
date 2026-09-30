@@ -47,19 +47,27 @@ export const Navbar: React.FC<NavbarProps> = ({
   }, []);
 
   return (
-    <header className="sticky top-0 z-50 w-full px-3 sm:px-6 pt-3 pb-2 pointer-events-none">
+    <header
+      className={[
+        // 🎯 fixed → همیشه چسبیده به بالای صفحه و با کاربر پایین میاد
+        'fixed top-0 left-0 right-0 z-50 w-full',
+        'px-3 sm:px-6 pointer-events-none',
+        'transition-all duration-500 [transition-timing-function:cubic-bezier(0.22,1,0.36,1)]',
+        scrolled ? 'pt-2 pb-2' : 'pt-4 pb-3',
+      ].join(' ')}
+    >
       <div
         className={[
           'pointer-events-auto mx-auto flex items-center justify-between',
           'rounded-full border backdrop-blur-2xl',
-          'transition-[max-width,height,padding,background-color,border-color,box-shadow,transform]',
-          'duration-500 [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] will-change-[max-width,height]',
+          'transition-[max-width,height,padding,background-color,border-color,box-shadow]',
+          'duration-500 [transition-timing-function:cubic-bezier(0.22,1,0.36,1)]',
           scrolled
-            ? // ── حالت اسکرول‌شده: کوچیک‌تر، جمع‌وجور، شناور
+            ? // ── کوچیک و شناور
               'max-w-4xl h-12 px-3 sm:px-4 ' +
               'bg-[#0a0c14]/85 border-white/[0.12] ' +
               'shadow-[0_10px_40px_-8px_rgba(0,0,0,0.75),0_0_0_1px_rgba(139,92,246,0.08),inset_0_1px_0_rgba(255,255,255,0.09)]'
-            : // ── حالت اولیه: بزرگ‌تر، پهن‌تر
+            : // ── بزرگ و پرحال
               'max-w-7xl h-16 px-4 sm:px-6 ' +
               'bg-[#0e1017]/55 border-white/[0.07] ' +
               'shadow-[0_4px_24px_-6px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.05)]',
@@ -132,13 +140,8 @@ export const Navbar: React.FC<NavbarProps> = ({
                     : 'text-[#9da3af] hover:text-white hover:bg-white/[0.06]',
                 ].join(' ')}
               >
-                <Icon
-                  className={scrolled ? 'w-3 h-3' : 'w-3.5 h-3.5'}
-                  strokeWidth={1.75}
-                />
-                <span className="whitespace-nowrap">
-                  {lang === 'fa' ? item.fa : item.en}
-                </span>
+                <Icon className={scrolled ? 'w-3 h-3' : 'w-3.5 h-3.5'} strokeWidth={1.75} />
+                <span className="whitespace-nowrap">{lang === 'fa' ? item.fa : item.en}</span>
               </button>
             );
           })}
