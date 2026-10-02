@@ -121,66 +121,39 @@ export default function App() {
   };
 
   const handleNavigateToChat = (orderCode?: string) => {
-    setSelectedChatOrderCode(orderCode || n
-export async function clientLogin(
-  emailOrUsername: string,
-  password?: string
-): Promise<{ success: boolean; user?: AuthUser; error?: string }> {
-  const cleanInput = emailOrUsername.trim().toLowerCase();
-  const cleanPassword = (password || '').trim();
+    setSelectedChatOrderCode(orderCode || null);
+    changeTab('chat');
+  };
 
-  try {
-    // جستجو با ایمیل یا نام کاربری
-    const { data: users, error } = await supabase
-      .from('users')
-      .select('*')
-      .or(`username.ilike.%${cleanInput}%,email.ilike.%${cleanInput}%`);
+  const handleAdminLoginSuccess = (token: string) => {
+    setAdminToken(token);
+    try {
+      localStorage.setItem('ritm_admin_token', token);
+    } catch (e) {}
+    setShowAdminLoginModal(false);
+  };
 
-    if (error) throw error;
+  const handleAdminLogout = () => {
+    setAdminToken(null);
+    try {
+      localStorage.removeItem('ritm_admin_token');
+    } catch (e) {}
+    setActiveTab('home');
+    try {
+      const url = new URL(window.location.href);
+      url.searchParams.set('tab', 'home');
+      window.history.replaceState({}, '', url.toString());
+    } catch (e) {}
+  };
 
-    if (!users || users.length === 0) {
-      return { success: false, error: 'کاربری با این مشخصات یا ایمیل یافت نشد.' };
+  const handleCornerAdminClick = () => {
+    if (isAdminLoggedIn) {
+      changeTab('admin');
+    } else {
+      setShowAdminLoginModal(true);
     }
+  };
 
-    // بررسی رمز عبور برای هر کاربر پیدا شده
-    for (const user of users) {
-      let passwordMatch = false;
-
-      if (!user.password) {
-        // کاربر رمز ندارد (ورود با OTP)
-        passwordMatch = true;
-      } else if (user.password === cleanPassword) {
-        // رمز plain-text
-        passwordMatch = true;
-      } else {
-        // تلاش برای بررسی رمز هش‌شده
-        try {
-          const bcrypt = await import('bcryptjs');
-          passwordMatch = await bcrypt.compare(cleanPassword, user.password);
-        } catch {
-          passwordMatch = user.password === cleanPassword;
-        }
-      }
-
-      if (passwordMatch) {
-        const authUser: AuthUser = {
-          id: user.id,
-          username: user.username || cleanInput,
-          email: user.email || cleanInput,
-          first_name: user.first_name,
-          last_name: user.last_name,
-          is_admin: user.is_admin,
-        };
-        return { success: true, user: authUser };
-      }
-    }
-
-    return { success: false, error: 'رمز عبور نادرست است.' };
-  } catch (err: any) {
-    console.error('Direct Supabase login error:', err);
-    return { success: false, error: err.message || 'خطا در ورود به حساب' };
-  }
-}
   return (
     <div
       dir={lang === 'fa' ? 'rtl' : 'ltr'}
@@ -264,10 +237,14 @@ export async function clientLogin(
           />
         )}
 
-        {/* VIEW 5: ADMIN MANAGEMENT HUB (Protected: Only accessible when logged in with password Mohmah123) */}
+        {/* VIEW 5: ADMIN MANAGEMENT HUB (Protected: Only accessible when logged in) */}
         {activeTab === 'admin' && (
           isAdminLoggedIn ? (
-            <AdminPanel lang={lang} onLogout={handleAdminLogout} onNavigateToChat={handleNavigateToChat} />
+            <AdminPanel
+              lang={lang}
+              onLogout={handleAdminLogout}
+              onNavigateToChat={handleNavigateToChat}
+            />
           ) : (
             <AdminLogin
               lang={lang}
@@ -312,7 +289,7 @@ export async function clientLogin(
         </button>
       </div>
 
-      {/* Floating direct Telegram Channel link button on bottom-left (Desktop only - mobile has header link) */}
+      {/* Floating direct Telegram Channel link button on bottom-left */}
       <a
         href="https://t.me/RITM_FreeLancer"
         target="_blank"
