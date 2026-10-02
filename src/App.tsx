@@ -12,6 +12,7 @@ import { AdminLogin } from './components/AdminLogin';
 import { ClientPortal } from './components/ClientPortal';
 import { PortfolioShowcase } from './components/PortfolioShowcase';
 import { BotHealthTerminal } from './components/BotHealthTerminal';
+import { ProjectChat } from './components/ProjectChat';
 import { Footer } from './components/Footer';
 import { IntroVideo } from './components/IntroVideo'; // 👈 اضافه شد
 import { ProjectType, Order, AuthUser } from './types';
@@ -20,7 +21,7 @@ import { Send, Shield, Lock, CheckCircle2, X } from 'lucide-react';
 import { getOrders } from './services/api';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'home' | 'order' | 'admin' | 'portfolio' | 'status' | 'client'>(() => {
+  const [activeTab, setActiveTab] = useState<'home' | 'order' | 'admin' | 'portfolio' | 'status' | 'client' | 'chat'>(() => {
     try {
       const params = new URLSearchParams(window.location.search);
       const tab = params.get('tab');
@@ -30,6 +31,7 @@ export default function App() {
       if (tab === 'client') return 'client';
       if (tab === 'status') return 'status';
       if (tab === 'portfolio') return 'portfolio';
+      if (tab === 'chat') return 'chat';
     } catch (e) {}
     return 'home';
   });
@@ -38,6 +40,7 @@ export default function App() {
   const [preselectedCategory, setPreselectedCategory] = useState<ProjectType>('video');
   const [pendingCount, setPendingCount] = useState<number>(0);
   const [showAdminLoginModal, setShowAdminLoginModal] = useState<boolean>(false);
+  const [selectedChatOrderCode, setSelectedChatOrderCode] = useState<string | null>(null);
 
   // 🎬 Intro Video State — فقط یک بار در هر سشن نمایش داده می‌شود
   const [showIntro, setShowIntro] = useState<boolean>(() => {
@@ -75,7 +78,7 @@ export default function App() {
 
   const isAdminLoggedIn = Boolean(adminToken);
 
-  const changeTab = (tab: 'home' | 'order' | 'admin' | 'portfolio' | 'status' | 'client') => {
+  const changeTab = (tab: 'home' | 'order' | 'admin' | 'portfolio' | 'status' | 'client' | 'chat') => {
     // If user tries to open admin or status tab without being logged in, show login modal
     if ((tab === 'admin' || tab === 'status') && !isAdminLoggedIn) {
       setShowAdminLoginModal(true);
@@ -132,6 +135,12 @@ export default function App() {
     try {
       localStorage.removeItem('ritm_client_user');
     } catch (e) {}
+  };
+
+  const handleNavigateToChat = (orderCode?: string) => {
+    setSelectedChatOrderCode(orderCode || null);
+    changeTab('chat');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleAdminLoginSuccess = (token: string) => {
@@ -196,7 +205,7 @@ export default function App() {
       )}
 
       {/* Main Content Area */}
-      <main className="flex-1 relative z-10 w-full">
+      <main className="flex-1 relative z-10 w-full pt-20 sm:pt-24 pb-24 md:pb-8">
         {/* VIEW 0: STUDIO HOME EXPERIENCE */}
         {activeTab === 'home' && (
           <HomeView
@@ -227,6 +236,7 @@ export default function App() {
             onLogout={handleClientLogout}
             onNavigateToOrder={() => changeTab('order')}
             onNavigateToPortfolio={() => changeTab('portfolio')}
+            onNavigateToChat={handleNavigateToChat}
           />
         )}
 
@@ -238,10 +248,23 @@ export default function App() {
           />
         )}
 
-        {/* VIEW 4: ADMIN MANAGEMENT HUB (Protected: Only accessible when logged in with password Mohmah123) */}
+        {/* VIEW 4: ONLINE PROJECT CHAT / DISCUSSION (Strictly Private 1-to-1) */}
+        {activeTab === 'chat' && (
+          <ProjectChat
+            lang={lang}
+            currentUser={currentUser}
+            isAdmin={isAdminLoggedIn}
+            initialOrderCode={selectedChatOrderCode}
+            onNavigateToOrder={() => changeTab('order')}
+            onNavigateToAuth={() => changeTab('client')}
+            onLogin={handleClientLogin}
+          />
+        )}
+
+        {/* VIEW 5: ADMIN MANAGEMENT HUB (Protected: Only accessible when logged in with password Mohmah123) */}
         {activeTab === 'admin' && (
           isAdminLoggedIn ? (
-            <AdminPanel lang={lang} onLogout={handleAdminLogout} />
+            <AdminPanel lang={lang} onLogout={handleAdminLogout} onNavigateToChat={handleNavigateToChat} />
           ) : (
             <AdminLogin
               lang={lang}
@@ -265,8 +288,8 @@ export default function App() {
         )}
       </main>
 
-      {/* CORNER BUTTON: "پنل ادمین" AS REQUESTED BY USER */}
-      <div className="fixed bottom-6 right-6 z-40 flex items-center gap-2">
+      {/* CORNER BUTTON: "پنل ادمین" AS REQUESTED BY USER (Desktop only - mobile has bottom dock) */}
+      <div className="hidden md:flex fixed bottom-6 right-6 z-40 items-center gap-2">
         <button
           onClick={handleCornerAdminClick}
           className={`flex items-center gap-2 px-4 py-3 rounded-2xl shadow-2xl transition-all duration-300 border text-xs font-bold ${
@@ -286,12 +309,12 @@ export default function App() {
         </button>
       </div>
 
-      {/* Floating direct Telegram Channel link button on bottom-left */}
+      {/* Floating direct Telegram Channel link button on bottom-left (Desktop only - mobile has header link) */}
       <a
         href="https://t.me/RITM_FreeLancer"
         target="_blank"
         rel="noopener noreferrer"
-        className="fixed bottom-6 left-6 z-40 p-3.5 rounded-full bg-[#d0bcff] text-[#131313] shadow-2xl hover:scale-110 active:scale-95 transition-all flex items-center gap-2 group hover:shadow-[#d0bcff]/30 cursor-pointer"
+        className="hidden md:flex fixed bottom-6 left-6 z-40 p-3.5 rounded-full bg-[#d0bcff] text-[#131313] shadow-2xl hover:scale-110 active:scale-95 transition-all items-center gap-2 group hover:shadow-[#d0bcff]/30 cursor-pointer"
         title="کانال رسمی تلگرام ریتم"
       >
         <Send className="w-5 h-5 fill-current" />

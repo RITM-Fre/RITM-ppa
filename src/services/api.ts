@@ -161,33 +161,37 @@ export async function updateOrderStatus(
       .single();
 
     if (error) throw error;
-
-    // Notify Telegram if telegram_id exists
-    if (notifyClient && data && data.telegram_id && data.telegram_id > 0) {
-      const statusLabels: Record<string, string> = {
-        approved: 'تایید شده (در نوبت اجرا)',
-        in_progress: 'در حال طراحی و پیاده‌سازی',
-        completed: 'تکمیل و تحویل نهایی',
-        rejected: 'رد شده',
-        cancelled: 'لغو شده',
-      };
-      const text = `📢 <b>بروزرسانی وضعیت سفارش ${data.order_code}</b>\n\nوضعیت جدید: <b>${statusLabels[status] || status}</b>\n${adminNotes ? `یادداشت مدیریت: ${adminNotes}` : ''}`;
-      try {
-        fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            chat_id: data.telegram_id,
-            text,
-            parse_mode: 'HTML',
-          }),
-        }).catch(() => {});
-      } catch (e) {}
-    }
-
     return { success: true, order: data as Order };
   } catch (err: any) {
     return { success: false, error: err.message };
+  }
+}
+
+// 3.1 Cancel Order (Client Action)
+export async function cancelOrderByClient(orderId: number, reason?: string): Promise<{ success: boolean; error?: string }> {
+  return updateOrderStatus(orderId, 'cancelled', reason ? `لغو شده توسط کاربر: ${reason}` : 'لغو شده توسط کاربر');
+}
+
+// 3.2 Delete Order Permanently (Admin Action)
+export async function deleteOrder(orderId: number): Promise<{ success: boolean; error?: string }> {
+  try {
+    const res = await fetch(`/api/orders/${orderId}`, {
+      method: 'DELETE',
+    });
+    if (res.ok) {
+      const data = await res.json();
+      return { success: Boolean(data.success) };
+    }
+  } catch (err) {
+    console.warn('Backend delete order failed, attempting direct Supabase deletion:', err);
+  }
+
+  try {
+    const { error } = await supabase.from('orders').delete().eq('id', orderId);
+    if (error) throw error;
+    return { success: true };
+  } catch (e: any) {
+    return { success: false, error: e.message || 'خطا در حذف سفارش' };
   }
 }
 
@@ -293,6 +297,40 @@ export async function clientLogin(
   }
 }
 
+// 5.1 Client Login with Verification Code (Email OTP)
+export async function clientLoginWithOtp(
+  email: string,
+  code: string
+): Promise<{ success: boolean; user?: AuthUser; error?: string }> {
+  const cleanEmail = email.trim().toLowerCase();
+  const cleanCode = code.trim();
+
+  try {
+    const res = await fetch('/api/auth/verify-login-otp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: cleanEmail, code: cleanCode }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (res.ok && data.success && data.user) {
+      return {
+        success: true,
+        user: {
+          id: data.user.id,
+          username: data.user.username,
+          email: data.user.email || cleanEmail,
+          first_name: data.user.first_name,
+          last_name: data.user.last_name,
+          is_admin: data.user.is_admin,
+        },
+      };
+    }
+    return { success: false, error: data.message || 'کد تایید نادرست است یا منقضی شده است.' };
+  } catch (err: any) {
+    return { success: false, error: err.message || 'خطا در تایید کد' };
+  }
+}
+
 // 6. Client Register (With Unique Email)
 export async function clientRegister(
   emailOrUsername: string,
@@ -375,6 +413,65 @@ export async function clientRegister(
     return { success: true, user: authUser };
   } catch (err: any) {
     return { success: false, error: err.message || 'خطا در ثبت نام کاربر' };
+  }
+}
+
+// 6.1 Send OTP Code for Verification or Password Reset
+export async function sendOtpEmail(
+  email: string,
+  purpose: 'reset' | 'register' | 'login' = 'reset'
+): Promise<{ success: boolean; message?: string; debugCode?: string; error?: string }> {
+  try {
+    const res = await fetch('/api/auth/send-otp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email.trim().toLowerCase(), purpose }),
+    });
+    const data = await res.json();
+    return data;
+  } catch (e: any) {
+    return { success: false, error: e.message || 'خطا در ارسال کد تایید به ایمیل' };
+  }
+}
+
+// 6.2 Verify OTP Code
+export async function verifyOtpCode(
+  email: string,
+  code: string
+): Promise<{ success: boolean; message?: string; error?: string }> {
+  try {
+    const res = await fetch('/api/auth/verify-otp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email.trim().toLowerCase(), code: code.trim() }),
+    });
+    const data = await res.json();
+    return data;
+  } catch (e: any) {
+    return { success: false, error: e.message || 'کد تایید اشتباه است یا منقضی شده است' };
+  }
+}
+
+// 6.3 Reset Password using OTP
+export async function resetPasswordWithOtp(
+  email: string,
+  code: string,
+  newPassword: string
+): Promise<{ success: boolean; message?: string; error?: string }> {
+  try {
+    const res = await fetch('/api/auth/reset-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: email.trim().toLowerCase(),
+        code: code.trim(),
+        newPassword: newPassword.trim(),
+      }),
+    });
+    const data = await res.json();
+    return data;
+  } catch (e: any) {
+    return { success: false, error: e.message || 'خطا در تغییر رمز عبور' };
   }
 }
 
@@ -517,5 +614,85 @@ export async function getSystemStatus(): Promise<any> {
         storageMaxMB: 1024,
       },
     };
+  }
+}
+
+// 11. Online Project Discussion & Chat API
+export async function getChatMessages(
+  orderCode?: string,
+  userId?: number,
+  all?: boolean
+): Promise<{ success: boolean; messages: any[]; error?: string }> {
+  try {
+    const params = new URLSearchParams();
+    if (orderCode) params.set('orderCode', orderCode);
+    if (userId) params.set('userId', userId.toString());
+    if (all) params.set('all', 'true');
+
+    const res = await fetch(`/api/chat/messages?${params.toString()}`);
+    if (res.ok) {
+      const data = await res.json();
+      return { success: true, messages: data.messages || [] };
+    }
+    return { success: false, messages: [], error: 'Failed to fetch messages' };
+  } catch (err: any) {
+    return { success: false, messages: [], error: err.message };
+  }
+}
+
+export async function sendChatMessage(data: {
+  orderCode?: string;
+  userId?: number | null;
+  clientName?: string;
+  senderRole: 'client' | 'admin';
+  text: string;
+}): Promise<{ success: boolean; message?: any; error?: string }> {
+  try {
+    const res = await fetch('/api/chat/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (res.ok) {
+      const resData = await res.json();
+      return { success: true, message: resData.message };
+    }
+    const errData = await res.json().catch(() => ({}));
+    return { success: false, error: errData.message || 'Error sending message' };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+export async function getChatConversations(): Promise<{
+  success: boolean;
+  conversations: any[];
+  error?: string;
+}> {
+  try {
+    const res = await fetch('/api/chat/conversations');
+    if (res.ok) {
+      const data = await res.json();
+      return { success: true, conversations: data.conversations || [] };
+    }
+    return { success: false, conversations: [], error: 'Failed to fetch conversations' };
+  } catch (err: any) {
+    return { success: false, conversations: [], error: err.message };
+  }
+}
+
+export async function markChatRead(
+  orderCode?: string,
+  readerRole: 'admin' | 'client' = 'admin'
+): Promise<{ success: boolean }> {
+  try {
+    const res = await fetch('/api/chat/mark-read', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ orderCode, readerRole }),
+    });
+    return { success: res.ok };
+  } catch {
+    return { success: false };
   }
 }

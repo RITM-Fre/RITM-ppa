@@ -71,6 +71,28 @@ export interface OrderMessage {
   created_at: string;
 }
 
+export interface ProjectChatMessage {
+  id: string;
+  orderCode?: string;
+  userId?: number | null;
+  clientName: string;
+  senderRole: 'client' | 'admin';
+  text: string;
+  createdAt: string;
+  read: boolean;
+}
+
+export interface ChatConversation {
+  orderCode: string;
+  clientName: string;
+  userId?: number | null;
+  lastMessage: string;
+  lastMessageTime: string;
+  unreadCount: number;
+  projectType?: ProjectType;
+  orderStatus?: OrderStatus;
+}
+
 export interface BotState {
   step: 'idle' | 'awaiting_category' | 'awaiting_name' | 'awaiting_contact' | 'awaiting_budget' | 'awaiting_deadline' | 'awaiting_description' | 'awaiting_confirm';
   tempOrder: Partial<Order>;

@@ -15,9 +15,24 @@ import {
   ArrowLeft,
   Search,
   FileText,
+  KeyRound,
+  Mail,
+  ExternalLink,
+  Trash2,
+  X,
+  MessageSquare,
 } from 'lucide-react';
 import { Order, AuthUser, OrderStatus, ProjectType } from '../types';
-import { clientLogin, clientRegister, getClientOrders } from '../services/api';
+import {
+  clientLogin,
+  clientLoginWithOtp,
+  clientRegister,
+  getClientOrders,
+  cancelOrderByClient,
+  sendOtpEmail,
+  verifyOtpCode,
+  resetPasswordWithOtp,
+} from '../services/api';
 import { ProjectContractModal } from './ProjectContractModal';
 
 interface ClientPortalProps {
@@ -27,6 +42,7 @@ interface ClientPortalProps {
   onLogout: () => void;
   onNavigateToOrder: () => void;
   onNavigateToPortfolio: () => void;
+  onNavigateToChat?: (orderCode?: string) => void;
 }
 
 export const ClientPortal: React.FC<ClientPortalProps> = ({
@@ -36,15 +52,29 @@ export const ClientPortal: React.FC<ClientPortalProps> = ({
   onLogout,
   onNavigateToOrder,
   onNavigateToPortfolio,
+  onNavigateToChat,
 }) => {
   // Auth Form State
-  const [authMode, setAuthMode] = useState<'login' | 'register' | 'lookup'>('login');
+  const [authMode, setAuthMode] = useState<'login' | 'register' | 'lookup' | 'forgot'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [lookupQuery, setLookupQuery] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Forgot Password / OTP State
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [otpCode, setOtpCode] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [forgotStep, setForgotStep] = useState<1 | 2 | 3>(1);
+  const [otpSuccessMsg, setOtpSuccessMsg] = useState('');
+  const [isSendingOtp, setIsSendingOtp] = useState(false);
+
+  // Cancel Order State
+  const [orderToCancel, setOrderToCancel] = useState<Order | null>(null);
+  const [isCancellingOrder, setIsCancellingOrder] = useState(false);
+  const [cancelReason, setCancelReason] = useState('');
 
   // Client Orders State
   const [orders, setOrders] = useState<Order[]>([]);
@@ -71,6 +101,101 @@ export const ClientPortal: React.FC<ClientPortalProps> = ({
       fetchClientOrders(currentUser);
     }
   }, [currentUser]);
+
+  const handleCancelOrderConfirm = async () => {
+    if (!orderToCancel) return;
+    setIsCancellingOrder(true);
+    try {
+      const res = await cancelOrderByClient(orderToCancel.id, cancelReason.trim());
+      if (res.success) {
+        setOrders((prev) =>
+          prev.map((o) =>
+            o.id === orderToCancel.id
+              ? {
+                  ...o,
+                  status: 'cancelled' as OrderStatus,
+                  admin_notes: cancelReason
+                    ? `لغو شده توسط کارفرما: ${cancelReason}`
+                    : 'لغو شده توسط کارفرما',
+                }
+              : o
+          )
+        );
+        setOrderToCancel(null);
+        setCancelReason('');
+      } else {
+        alert(res.error || (lang === 'fa' ? 'خطا در لغو سفارش' : 'Failed to cancel order'));
+      }
+    } catch (err: any) {
+      alert(err.message || (lang === 'fa' ? 'خطا در اتصال به سرور' : 'Connection error'));
+    } finally {
+      setIsCancellingOrder(false);
+    }
+  };
+
+  // Login with OTP State (Required verification code on login)
+  const [loginStep, setLoginStep] = useState<1 | 2>(1);
+  const [loginOtpCode, setLoginOtpCode] = useState('');
+  const [loginDebugCode, setLoginDebugCode] = useState('');
+  const [isSendingLoginOtp, setIsSendingLoginOtp] = useState(false);
+  const [loginSuccessMsg, setLoginSuccessMsg] = useState('');
+
+  // Step 1: Send OTP to user's email for login
+  const handleSendLoginOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMsg('');
+    setLoginSuccessMsg('');
+    const cleanEmail = email.trim().toLowerCase();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(cleanEmail)) {
+      setErrorMsg(lang === 'fa' ? 'لطفاً یک آدرس ایمیل معتبر وارد کنید.' : 'Invalid email format.');
+      return;
+    }
+
+    setIsSendingLoginOtp(true);
+    try {
+      const res = await sendOtpEmail(cleanEmail, 'login');
+      if (res.success) {
+        setLoginStep(2);
+        setLoginSuccessMsg(res.message || (lang === 'fa' ? `کد تایید ۶ رقمی به ایمیل ${cleanEmail} ارسال شد.` : 'Verification code sent.'));
+        if (res.debugCode) {
+          setLoginDebugCode(res.debugCode);
+        }
+      } else {
+        setErrorMsg(res.error || (lang === 'fa' ? 'خطا در ارسال کد تایید.' : 'Failed to send verification code.'));
+      }
+    } catch (e: any) {
+      setErrorMsg(e.message || (lang === 'fa' ? 'خطا در ارتباط با سرور.' : 'Server connection error.'));
+    } finally {
+      setIsSendingLoginOtp(false);
+    }
+  };
+
+  // Step 2: Verify OTP and log in
+  const handleVerifyLoginOtpSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMsg('');
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanCode = loginOtpCode.trim();
+    if (!cleanCode || cleanCode.length < 4) {
+      setErrorMsg(lang === 'fa' ? 'لطفاً کد تایید دریافتی را به طور کامل وارد کنید.' : 'Please enter the verification code.');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const data = await clientLoginWithOtp(cleanEmail, cleanCode);
+      if (data.success && data.user) {
+        onLogin(data.user);
+      } else {
+        setErrorMsg(data.error || (lang === 'fa' ? 'کد تایید وارد شده نادرست یا منقضی شده است.' : 'Invalid verification code.'));
+      }
+    } catch (e: any) {
+      setErrorMsg(e.message || (lang === 'fa' ? 'خطا در تایید کد.' : 'Verification error.'));
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -140,6 +265,110 @@ export const ClientPortal: React.FC<ClientPortalProps> = ({
     if (!lookupQuery.trim()) return;
     setErrorMsg('');
     await fetchClientOrders(null, lookupQuery.trim());
+  };
+
+  const handleSendOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMsg('');
+    setOtpSuccessMsg('');
+    const clean = forgotEmail.trim().toLowerCase();
+    if (!clean || !clean.includes('@')) {
+      setErrorMsg(lang === 'fa' ? 'لطفاً آدرس ایمیل معتبر وارد کنید.' : 'Valid email required.');
+      return;
+    }
+
+    setIsSendingOtp(true);
+    try {
+      const res = await sendOtpEmail(clean, 'reset');
+      if (res.success) {
+        setForgotStep(2);
+        setOtpSuccessMsg(res.message || 'کد تایید ۶ رقمی به ایمیل شما ارسال شد.');
+        if (res.debugCode) {
+          console.log('[Dev Preview] OTP Code:', res.debugCode);
+        }
+      } else {
+        setErrorMsg(res.error || (lang === 'fa' ? 'خطا در ارسال کد تایید.' : 'Failed to send OTP code.'));
+      }
+    } catch (e: any) {
+      setErrorMsg(e.message || 'خطا در ارتباط با سرور.');
+    } finally {
+      setIsSendingOtp(false);
+    }
+  };
+
+  const handleVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMsg('');
+    if (!otpCode.trim() || otpCode.trim().length < 4) {
+      setErrorMsg(lang === 'fa' ? 'لطفاً کد تایید دریافتی را کامل وارد کنید.' : 'Please enter the verification code.');
+      return;
+    }
+
+    setIsSendingOtp(true);
+    try {
+      const res = await verifyOtpCode(forgotEmail.trim().toLowerCase(), otpCode.trim());
+      if (res.success) {
+        setForgotStep(3);
+        setErrorMsg('');
+        setOtpSuccessMsg(lang === 'fa' ? 'کد تایید شد. اکنون رمز عبور جدید را تعیین فرمایید:' : 'Code verified. Set your new password:');
+      } else {
+        setErrorMsg(res.error || (lang === 'fa' ? 'کد وارد شده نامعتبر یا منقضی است.' : 'Invalid code.'));
+      }
+    } catch (e: any) {
+      setErrorMsg(e.message || 'خطا در تایید کد.');
+    } finally {
+      setIsSendingOtp(false);
+    }
+  };
+
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMsg('');
+    if (!newPassword.trim() || newPassword.trim().length < 4) {
+      setErrorMsg(lang === 'fa' ? 'رمز عبور باید حداقل ۴ کاراکتر باشد.' : 'Password must be at least 4 characters.');
+      return;
+    }
+
+    setIsSendingOtp(true);
+    try {
+      const res = await resetPasswordWithOtp(forgotEmail.trim().toLowerCase(), otpCode.trim(), newPassword.trim());
+      if (res.success) {
+        setOtpSuccessMsg(lang === 'fa' ? '✓ رمز عبور با موفقیت تغییر کرد! اکنون وارد شوید.' : 'Password changed successfully!');
+        setTimeout(() => {
+          setEmail(forgotEmail);
+          setPassword(newPassword);
+          setAuthMode('login');
+          setForgotStep(1);
+          setOtpCode('');
+          setNewPassword('');
+        }, 1500);
+      } else {
+        setErrorMsg(res.error || 'خطا در تغییر رمز عبور.');
+      }
+    } catch (e: any) {
+      setErrorMsg(e.message || 'خطا در تغییر رمز عبور.');
+    } finally {
+      setIsSendingOtp(false);
+    }
+  };
+
+  const handleConfirmCancelOrder = async () => {
+    if (!orderToCancel) return;
+    setIsCancellingOrder(true);
+    try {
+      const res = await cancelOrderByClient(orderToCancel.id, cancelReason);
+      if (res.success) {
+        setOrders((prev) => prev.map((o) => (o.id === orderToCancel.id ? { ...o, status: 'cancelled' } : o)));
+        setOrderToCancel(null);
+        setCancelReason('');
+      } else {
+        alert(res.error || 'خطا در لغو سفارش');
+      }
+    } catch (e) {
+      console.error('Cancel order error:', e);
+    } finally {
+      setIsCancellingOrder(false);
+    }
   };
 
   // Helper for workflow milestones
@@ -222,45 +451,125 @@ export const ClientPortal: React.FC<ClientPortalProps> = ({
             </div>
           )}
 
-          {/* LOGIN FORM */}
-          {authMode === 'login' && (
-            <form onSubmit={handleLoginSubmit} className="space-y-4 text-right">
+          {/* LOGIN FORM (STEP 1: Enter Email & Request Verification Code) */}
+          {authMode === 'login' && loginStep === 1 && (
+            <form onSubmit={handleSendLoginOtp} className="space-y-4 text-right">
               <div>
                 <label className="block text-xs font-semibold text-[#958ea0] mb-1.5">
-                  {lang === 'fa' ? 'آدرس ایمیل شما:' : 'Email Address:'}
+                  {lang === 'fa' ? 'آدرس ایمیل شما جهت دریافت کد تایید:' : 'Email Address for Verification Code:'}
                 </label>
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="name@example.com"
-                  className="w-full bg-black/40 border border-white/15 focus:border-[#d0bcff] rounded-xl px-4 py-2.5 text-xs text-[#e5e2e1] outline-none dir-ltr text-left"
-                />
+                <div className="relative">
+                  <input
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="name@example.com"
+                    className="w-full bg-black/40 border border-white/15 focus:border-[#d0bcff] rounded-xl px-4 py-2.5 text-xs text-[#e5e2e1] outline-none dir-ltr text-left"
+                  />
+                  <Mail className="w-4 h-4 text-[#958ea0] absolute left-3 top-3 pointer-events-none" />
+                </div>
+                <p className="text-[11px] text-[#958ea0] mt-1.5 leading-relaxed">
+                  {lang === 'fa'
+                    ? 'جهت حفظ امنیت و محرمانگی، کد تایید یکبار مصرف به ایمیل شما ارسال خواهد شد.'
+                    : 'A verification code will be sent to your email to verify your identity.'}
+                </p>
               </div>
+
+              <button
+                type="submit"
+                disabled={isSendingLoginOtp || !email.trim()}
+                className="w-full py-3 rounded-xl bg-[#d0bcff] hover:bg-[#d0bcff]/90 text-[#131313] font-bold text-xs transition-all shadow-lg shadow-[#d0bcff]/20 disabled:opacity-50 mt-2 flex items-center justify-center gap-2 cursor-pointer"
+              >
+                {isSendingLoginOtp ? (
+                  <>
+                    <span className="w-4 h-4 border-2 border-[#131313] border-t-transparent rounded-full animate-spin" />
+                    <span>{lang === 'fa' ? 'در حال ارسال کد تایید...' : 'Sending code...'}</span>
+                  </>
+                ) : (
+                  <>
+                    <KeyRound className="w-4 h-4" />
+                    <span>{lang === 'fa' ? 'دریافت کد تایید ورود به حساب' : 'Send Verification Code'}</span>
+                  </>
+                )}
+              </button>
+            </form>
+          )}
+
+          {/* LOGIN FORM (STEP 2: Enter Verification Code) */}
+          {authMode === 'login' && loginStep === 2 && (
+            <form onSubmit={handleVerifyLoginOtpSubmit} className="space-y-4 text-right">
+              <div className="p-3 rounded-xl bg-[#d0bcff]/10 border border-[#d0bcff]/30 text-[#d0bcff] text-xs leading-relaxed">
+                {loginSuccessMsg || (lang === 'fa' ? `کد تایید ۶ رقمی به ایمیل ${email} ارسال شد.` : `Code sent to ${email}`)}
+              </div>
+
+              {loginDebugCode && (
+                <div
+                  onClick={() => setLoginOtpCode(loginDebugCode)}
+                  className="p-2.5 rounded-xl bg-[#ffb869]/10 border border-[#ffb869]/30 text-[#ffb869] text-xs flex items-center justify-between cursor-pointer hover:bg-[#ffb869]/20 transition-colors"
+                  title="کلیک برای درج خودکار کد"
+                >
+                  <span className="font-mono font-bold">💡 کد تایید دریافتی: {loginDebugCode}</span>
+                  <span className="text-[10px] underline">درج خودکار</span>
+                </div>
+              )}
 
               <div>
                 <label className="block text-xs font-semibold text-[#958ea0] mb-1.5">
-                  {lang === 'fa' ? 'رمز عبور:' : 'Password:'}
+                  {lang === 'fa' ? 'کد تایید ۶ رقمی دریافتی:' : '6-digit Verification Code:'}
                 </label>
                 <input
-                  type="password"
+                  type="text"
+                  maxLength={6}
                   required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full bg-black/40 border border-white/15 focus:border-[#d0bcff] rounded-xl px-4 py-2.5 text-xs text-[#e5e2e1] outline-none dir-ltr text-left"
+                  autoFocus
+                  value={loginOtpCode}
+                  onChange={(e) => setLoginOtpCode(e.target.value.replace(/\D/g, ''))}
+                  placeholder="------"
+                  className="w-full bg-black/40 border border-white/15 focus:border-[#d0bcff] rounded-xl px-4 py-3 text-lg font-mono text-center tracking-[0.5em] text-[#d0bcff] outline-none dir-ltr"
                 />
               </div>
 
               <button
                 type="submit"
-                disabled={isSubmitting}
+                disabled={isSubmitting || loginOtpCode.length < 4}
                 className="w-full py-3 rounded-xl bg-[#d0bcff] hover:bg-[#d0bcff]/90 text-[#131313] font-bold text-xs transition-all shadow-lg shadow-[#d0bcff]/20 disabled:opacity-50 mt-2 flex items-center justify-center gap-2 cursor-pointer"
               >
-                <LogIn className="w-4 h-4" />
-                <span>{isSubmitting ? (lang === 'fa' ? 'در حال ورود...' : 'Signing in...') : (lang === 'fa' ? 'ورود به حساب کاربری' : 'Sign In')}</span>
+                {isSubmitting ? (
+                  <>
+                    <span className="w-4 h-4 border-2 border-[#131313] border-t-transparent rounded-full animate-spin" />
+                    <span>{lang === 'fa' ? 'در حال تایید و ورود...' : 'Verifying...'}</span>
+                  </>
+                ) : (
+                  <>
+                    <LogIn className="w-4 h-4" />
+                    <span>{lang === 'fa' ? 'تایید کد و ورود به حساب' : 'Verify & Log In'}</span>
+                  </>
+                )}
               </button>
+
+              <div className="flex items-center justify-between text-xs pt-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setLoginStep(1);
+                    setLoginOtpCode('');
+                    setErrorMsg('');
+                  }}
+                  className="text-[#958ea0] hover:text-white transition-colors cursor-pointer"
+                >
+                  {lang === 'fa' ? '← تغییر آدرس ایمیل' : '← Change Email'}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleSendLoginOtp}
+                  disabled={isSendingLoginOtp}
+                  className="text-[#d0bcff] hover:underline disabled:opacity-50 cursor-pointer"
+                >
+                  {lang === 'fa' ? 'ارسال مجدد کد تایید' : 'Resend Code'}
+                </button>
+              </div>
             </form>
           )}
 
@@ -562,31 +871,117 @@ export const ClientPortal: React.FC<ClientPortalProps> = ({
 
                   {/* Actions */}
                   <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
-                    <button
-                      onClick={() => setSelectedContractOrder(ord)}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#d0bcff]/15 hover:bg-[#d0bcff]/25 text-[#d0bcff] border border-[#d0bcff]/30 text-xs font-semibold cursor-pointer transition-colors"
-                    >
-                      <FileText className="w-3.5 h-3.5" />
-                      <span>{lang === 'fa' ? 'فاکتور و قرارداد رسمی' : 'Official Contract & Invoice'}</span>
-                    </button>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        onClick={() => setSelectedContractOrder(ord)}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#d0bcff]/15 hover:bg-[#d0bcff]/25 text-[#d0bcff] border border-[#d0bcff]/30 text-xs font-semibold cursor-pointer transition-colors"
+                      >
+                        <FileText className="w-3.5 h-3.5" />
+                        <span>{lang === 'fa' ? 'فاکتور و قرارداد' : 'Invoice & Contract'}</span>
+                      </button>
 
-                    <a
-                      href="https://t.me/RITM_FreeLancer"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 text-xs text-[#38bdf8] hover:underline"
-                    >
-                      <Send className="w-3.5 h-3.5" />
-                      <span>{lang === 'fa' ? 'کانال رسمی تلگرام' : 'Telegram Channel'}</span>
-                    </a>
+                      {onNavigateToChat && (
+                        <button
+                          onClick={() => onNavigateToChat(ord.order_code)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#a3e635]/15 hover:bg-[#a3e635]/25 text-[#a3e635] border border-[#a3e635]/30 text-xs font-semibold cursor-pointer transition-colors"
+                          title="گفتگوی مستقیم با پشتیبانی درباره این پروژه"
+                        >
+                          <MessageSquare className="w-3.5 h-3.5" />
+                          <span>{lang === 'fa' ? 'گفتگوی آنلاین' : 'Live Chat'}</span>
+                        </button>
+                      )}
 
-                    <span className="text-[10px] text-[#958ea0] font-mono mr-auto">
-                      آخرین بروزرسانی: {new Date(ord.updated_at).toLocaleDateString('fa-IR')}
-                    </span>
+                      {ord.status !== 'cancelled' && ord.status !== 'completed' && (
+                        <button
+                          onClick={() => setOrderToCancel(ord)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 text-xs font-medium cursor-pointer transition-colors"
+                          title="درخواست لغو سفارش"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          <span>{lang === 'fa' ? 'لغو سفارش' : 'Cancel'}</span>
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-3 mr-auto">
+                      <a
+                        href="https://t.me/RITM_FreeLancer"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 text-xs text-[#38bdf8] hover:underline"
+                      >
+                        <Send className="w-3.5 h-3.5" />
+                        <span>{lang === 'fa' ? 'کانال رسمی' : 'Channel'}</span>
+                      </a>
+
+                      <span className="text-[10px] text-[#958ea0] font-mono">
+                        بروزرسانی: {new Date(ord.updated_at).toLocaleDateString('fa-IR')}
+                      </span>
+                    </div>
                   </div>
                 </div>
               );
             })}
+          </div>
+        )}
+
+        {/* CANCEL ORDER CONFIRMATION MODAL */}
+        {orderToCancel && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+            <div className="glass-panel w-full max-w-md rounded-2xl border border-red-500/30 p-6 shadow-2xl space-y-4 text-right">
+              <div className="w-12 h-12 rounded-xl bg-red-500/20 text-red-400 flex items-center justify-center mx-auto border border-red-500/30">
+                <AlertCircle className="w-6 h-6" />
+              </div>
+
+              <div className="text-center space-y-1">
+                <h3 className="text-lg font-bold text-white">
+                  {lang === 'fa' ? 'لغو سفارش' : 'Cancel Order'}
+                </h3>
+                <p className="text-xs text-[#958ea0] leading-relaxed">
+                  {lang === 'fa'
+                    ? `آیا از لغو سفارش شماره ${orderToCancel.order_code} اطمینان دارید؟ وضعیت پروژه به «لغو شده توسط کاربر» تغییر خواهد کرد.`
+                    : `Are you sure you want to cancel order #${orderToCancel.order_code}?`}
+                </p>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs text-[#b8b3c4] block">
+                  {lang === 'fa' ? 'علت انصراف و لغو (اختیاری):' : 'Reason for cancellation (optional):'}
+                </label>
+                <textarea
+                  value={cancelReason}
+                  onChange={(e) => setCancelReason(e.target.value)}
+                  placeholder={
+                    lang === 'fa'
+                      ? 'علت انصراف خود را در صورت تمایل بنویسید...'
+                      : 'Please specify the reason...'
+                  }
+                  className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-xs text-white placeholder-[#71717a] focus:outline-none focus:border-[#d0bcff] h-20 resize-none"
+                />
+              </div>
+
+              <div className="flex items-center justify-center gap-3 pt-2">
+                <button
+                  onClick={() => {
+                    setOrderToCancel(null);
+                    setCancelReason('');
+                  }}
+                  disabled={isCancellingOrder}
+                  className="px-5 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-white text-xs font-semibold cursor-pointer"
+                >
+                  {lang === 'fa' ? 'بازگشت' : 'Back'}
+                </button>
+                <button
+                  onClick={handleCancelOrderConfirm}
+                  disabled={isCancellingOrder}
+                  className="px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition-colors cursor-pointer disabled:opacity-50"
+                >
+                  {isCancellingOrder
+                    ? (lang === 'fa' ? 'در حال لغو...' : 'Cancelling...')
+                    : (lang === 'fa' ? 'بله، لغو سفارش' : 'Confirm Cancel')}
+                </button>
+              </div>
+            </div>
           </div>
         )}
 

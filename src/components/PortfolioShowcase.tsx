@@ -224,7 +224,16 @@ export const PortfolioShowcase: React.FC<PortfolioShowcaseProps> = ({
                   </div>
                 )}
 
-                <div className="absolute top-3 left-3 flex flex-wrap gap-1.5">
+                {/* Top Right Card & File Identifier Badge */}
+                <div className="absolute top-3 right-3 z-10">
+                  <span className="px-2.5 py-1 rounded-lg text-[10.5px] font-mono font-bold bg-black/85 text-[#a3e635] backdrop-blur-md border border-[#a3e635]/40 shadow-md flex items-center gap-1.5">
+                    <span>{lang === 'fa' ? `کارت ${item.cardNumber}` : `Card ${item.cardNumber}`}</span>
+                    <span className="text-white/40">|</span>
+                    <span className="text-white dir-ltr text-[10px]">{item.fileName}</span>
+                  </span>
+                </div>
+
+                <div className="absolute top-3 left-3 flex flex-wrap gap-1.5 z-10">
                   {item.tags.map((t: string, idx: number) => (
                     <span
                       key={idx}
@@ -273,10 +282,15 @@ export const PortfolioShowcase: React.FC<PortfolioShowcaseProps> = ({
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
           <div className="glass-panel w-full max-w-3xl rounded-3xl border border-white/20 p-6 shadow-2xl relative space-y-4 text-right overflow-hidden my-auto max-h-[92vh] flex flex-col">
             <div className="flex items-center justify-between pb-3 border-b border-white/10">
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <span className="text-xs font-mono px-2 py-0.5 rounded bg-[#d0bcff]/15 text-[#d0bcff] uppercase">
                   {selectedMediaProject.category}
                 </span>
+                {selectedMediaProject.fileName && (
+                  <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-[#a3e635]/15 text-[#a3e635] border border-[#a3e635]/30 dir-ltr">
+                    nem/{selectedMediaProject.fileName}
+                  </span>
+                )}
                 <h3 className="text-base font-bold text-white">
                   {lang === 'fa' ? selectedMediaProject.titleFa : selectedMediaProject.titleEn}
                 </h3>

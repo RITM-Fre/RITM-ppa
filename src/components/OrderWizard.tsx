@@ -196,42 +196,6 @@ export const OrderWizard: React.FC<OrderWizardProps> = ({
     const finalBudget = budget.trim() || 'توافقی';
 
     try {
-      let uploadedFileUrl: string | null = null;
-      let uploadedFileName: string | null = null;
-
-      // 1. If file attached, upload first
-      if (selectedFile) {
-        setUploadStatus(lang === 'fa' ? 'در حال آپلود و ذخیره فایل روی سرور استودیو...' : 'Uploading file to studio storage...');
-        const reader = new FileReader();
-        const base64Promise = new Promise<string>((resolve, reject) => {
-          reader.onload = () => resolve(reader.result as string);
-          reader.onerror = reject;
-          reader.readAsDataURL(selectedFile);
-        });
-
-        const fileBase64 = await base64Promise;
-        const uploadRes = await uploadOrderMedia({
-          orderCode: 'PENDING',
-          clientName: fullName.trim(),
-          contact: contact.trim(),
-          fileName: selectedFile.name,
-          fileType: selectedFile.type || 'application/octet-stream',
-          fileBase64,
-          caption: `سفارش جدید - ${description.substring(0, 100)}`,
-        });
-
-        if (uploadRes.success && (uploadRes as any).file) {
-          uploadedFileUrl = (uploadRes as any).file.url;
-          uploadedFileName = (uploadRes as any).file.fileName;
-        }
-      }
-
-      setUploadStatus(lang === 'fa' ? 'در حال ثبت نهایی سفارش در سیستم...' : 'Saving order...');
-
-      const descWithFile = uploadedFileUrl
-        ? `${description.trim()}\n\n📎 فایل پیوست: ${uploadedFileName || selectedFile?.name} (${uploadedFileUrl})`
-        : description.trim();
-
       const data = await createOrder({
         full_name: fullName.trim(),
         contact: contact.trim(),
@@ -239,25 +203,14 @@ export const OrderWizard: React.FC<OrderWizardProps> = ({
         project_type: projectType,
         budget: finalBudget,
         deadline: deadline.trim() || 'توافقی',
-        description: descWithFile,
+        description: description.trim(),
         telegram_id: telegramId ? parseInt(telegramId, 10) : 0,
         username: username.replace(/^@/, '') || null,
         user_id: currentUser?.id || null,
-        attached_file_url: uploadedFileUrl,
-        attached_file_name: uploadedFileName || selectedFile?.name || null,
       });
 
       if (!data.success || !data.order) {
         throw new Error(data.error || 'خطا در ثبت سفارش');
-      }
-
-      // Link order code to stored file
-      if (uploadedFileUrl) {
-        fetch('/api/admin/storage/link', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ fileUrl: uploadedFileUrl, orderCode: data.order.order_code }),
-        }).catch(() => {});
       }
 
       setSubmittedOrder(data.order);
@@ -358,13 +311,22 @@ export const OrderWizard: React.FC<OrderWizardProps> = ({
             </button>
 
             <a
-              href="https://t.me/RITM_FreeLancer"
+              href="https://t.me/AdvRFL"
               target="_blank"
               rel="noopener noreferrer"
               className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-[#229ed9] hover:bg-[#229ed9]/90 text-white font-semibold text-sm transition-all shadow-md cursor-pointer"
             >
-              <Send className="w-4 h-4" />
-              <span>{lang === 'fa' ? 'کانال رسمی تلگرام' : 'Telegram Channel'}</span>
+              <Send className="w-4 h-4 fill-current" />
+              <span>{lang === 'fa' ? 'ارسال فایل‌ها در تلگرام (@AdvRFL)' : 'Send Files on Telegram'}</span>
+            </a>
+
+            <a
+              href="https://ble.ir/AdvRFL"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-[#a3e635] hover:bg-[#a3e635]/90 text-[#131313] font-bold text-sm transition-all shadow-md cursor-pointer"
+            >
+              <span>{lang === 'fa' ? 'ارسال فایل‌ها در بله (@AdvRFL)' : 'Send Files on Bale'}</span>
             </a>
 
             <button
@@ -732,82 +694,81 @@ export const OrderWizard: React.FC<OrderWizardProps> = ({
               />
             </div>
 
-            {/* Upload Video or Photo direct to Telegram */}
-            <div className="p-4 rounded-xl bg-black/40 border border-white/10 space-y-3">
-              <div className="flex items-center justify-between">
-                <label className="text-xs font-semibold text-[#e5e2e1] flex items-center gap-2">
-                  <Paperclip className="w-4 h-4 text-[#d0bcff]" />
-                  <span>{lang === 'fa' ? 'ضمیمه فایل نمونه (عکس یا فیلم)' : 'Attach Reference File (Photo or Video)'}</span>
-                </label>
-                <span className="text-[11px] text-[#adc6ff]">
-                  {lang === 'fa' ? 'ذخیره در سرور استودیو ریتم' : 'Saved to Studio Cloud'}
+            {/* Direct Media Transfer to Telegram & Bale */}
+            <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-[#161823] to-[#12141c] border border-[#d0bcff]/20 shadow-xl space-y-4">
+              <div className="flex items-center justify-between border-b border-white/[0.08] pb-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-[#d0bcff]/15 text-[#d0bcff] flex items-center justify-center border border-[#d0bcff]/30">
+                    <Send className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs sm:text-sm font-bold text-white">
+                      {lang === 'fa' ? 'ارسال راش‌ها، فایل‌ها و مستندات پروژه' : 'Direct Media & Assets Transfer'}
+                    </h4>
+                    <span className="text-[11px] text-[#958ea0] block">
+                      {lang === 'fa' ? 'کیفیت اصلی (Original)، سرعت حداکثری و بدون محدودیت حجم' : 'Unlimited size, original quality via direct message'}
+                    </span>
+                  </div>
+                </div>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-[#a3e635]/15 text-[#a3e635] border border-[#a3e635]/30">
+                  Direct PM
                 </span>
               </div>
 
-              {!selectedFile ? (
-                <label className="border border-dashed border-white/20 hover:border-[#d0bcff]/60 rounded-xl p-5 flex flex-col items-center justify-center cursor-pointer transition-colors bg-white/[0.01] hover:bg-white/[0.03]">
-                  <Upload className="w-6 h-6 text-[#d0bcff] mb-2" />
-                  <span className="text-xs text-[#e5e2e1] font-medium mb-1">
-                    {lang === 'fa' ? 'کلیک کنید یا فایل را اینجا بکشید' : 'Click to browse or drag file here'}
-                  </span>
-                  <span className="text-[11px] text-[#958ea0]">
-                    {lang === 'fa' ? 'پشتیبانی از انواع ویدیو (MP4, MOV) و تصویر (PNG, JPG) تا ۲۵ مگابایت' : 'Supported video & image files up to 25MB'}
-                  </span>
-                  <input
-                    type="file"
-                    accept="image/*,video/*"
-                    onChange={handleFileChange}
-                    className="hidden"
-                  />
-                </label>
-              ) : (
-                <div className="p-3 rounded-lg bg-white/5 border border-white/10 flex items-center justify-between">
+              <p className="text-xs text-[#b8b3c4] leading-relaxed">
+                {lang === 'fa'
+                  ? 'جهت حفظ نهایت کیفیت ویدیویی و سرعت بالای انتقال، فایل‌ها، فوتیج‌ها یا فایل‌های حجیم خود را مستقیماً به پی‌وی پشتیبانی ارسال فرمایید. پس از ثبت سفارش، کد رهگیری خود را در پیام ارسال کنید:'
+                  : 'For maximum upload speed and original bit-rate video transfers, kindly send your raw files directly to our Telegram or Bale PM with your order code:'}
+              </p>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                {/* Telegram PM */}
+                <a
+                  href="https://t.me/AdvRFL"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-between p-3.5 rounded-xl bg-white/[0.03] hover:bg-[#38bdf8]/15 border border-white/10 hover:border-[#38bdf8]/40 transition-all group cursor-pointer"
+                >
                   <div className="flex items-center gap-3">
-                    {filePreview ? (
-                      <img src={filePreview} alt="Preview" className="w-12 h-12 rounded object-cover border border-white/10" />
-                    ) : (
-                      <div className="w-12 h-12 rounded bg-[#d0bcff]/15 text-[#d0bcff] flex items-center justify-center">
-                        {selectedFile.type.startsWith('video/') ? <Video className="w-6 h-6" /> : <ImageIcon className="w-6 h-6" />}
-                      </div>
-                    )}
+                    <div className="w-9 h-9 rounded-xl bg-[#38bdf8]/20 text-[#38bdf8] flex items-center justify-center">
+                      <Send className="w-4 h-4 fill-current text-[#38bdf8]" />
+                    </div>
                     <div className="text-right">
-                      <div className="text-xs font-semibold text-[#e5e2e1] truncate max-w-[200px] sm:max-w-xs">{selectedFile.name}</div>
-                      <div className="text-[11px] text-[#958ea0]">
-                        {(selectedFile.size / (1024 * 1024)).toFixed(2)} MB · {selectedFile.type.startsWith('video/') ? 'ویدیو' : 'تصویر'}
-                      </div>
+                      <span className="text-xs font-bold text-white block group-hover:text-[#38bdf8] transition-colors">
+                        {lang === 'fa' ? 'پی‌وی تلگرام مدیریت' : 'Telegram PM'}
+                      </span>
+                      <span className="text-[11px] text-[#958ea0] font-mono block dir-ltr">
+                        @AdvRFL
+                      </span>
                     </div>
                   </div>
-                  <button
-                    type="button"
-                    onClick={removeFile}
-                    className="p-2 rounded-lg text-rose-400 hover:bg-rose-500/10 transition-colors"
-                    title={lang === 'fa' ? 'حذف فایل' : 'Remove file'}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              )}
-            </div>
+                  <ExternalLink className="w-4 h-4 text-[#958ea0] group-hover:text-[#38bdf8] transition-colors" />
+                </a>
 
-            {/* Studio Cloud Storage note */}
-            <div className="p-3.5 rounded-xl bg-white/[0.03] border border-white/[0.08] flex items-center justify-between text-xs text-[#958ea0]">
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-[#a3e635]" />
-                <span>
-                  {lang === 'fa'
-                    ? 'سفارش و فایل‌های ضمیمه در دیسک ابری استودیو ریتم ثبت و در پنل مدیریت بررسی می‌شوند.'
-                    : 'Order & media are saved directly to RITM Studio cloud storage.'}
-                </span>
+                {/* Bale PM */}
+                <a
+                  href="https://ble.ir/AdvRFL"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-between p-3.5 rounded-xl bg-white/[0.03] hover:bg-[#a3e635]/15 border border-white/10 hover:border-[#a3e635]/40 transition-all group cursor-pointer"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-[#a3e635]/20 text-[#a3e635] flex items-center justify-center font-bold text-xs">
+                      بله
+                    </div>
+                    <div className="text-right">
+                      <span className="text-xs font-bold text-white block group-hover:text-[#a3e635] transition-colors">
+                        {lang === 'fa' ? 'پی‌وی پیام‌رسان بله' : 'Bale PM'}
+                      </span>
+                      <span className="text-[11px] text-[#958ea0] font-mono block dir-ltr">
+                        @AdvRFL
+                      </span>
+                    </div>
+                  </div>
+                  <ExternalLink className="w-4 h-4 text-[#958ea0] group-hover:text-[#a3e635] transition-colors" />
+                </a>
               </div>
-              <span className="font-mono text-[11px] text-[#adc6ff]">Cloud Storage</span>
             </div>
-
-            {uploadStatus && (
-              <div className="p-3 rounded-xl bg-[#d0bcff]/10 border border-[#d0bcff]/30 text-xs text-[#d0bcff] flex items-center gap-2 animate-pulse">
-                <span className="w-3.5 h-3.5 border-2 border-[#d0bcff] border-t-transparent rounded-full animate-spin" />
-                <span>{uploadStatus}</span>
-              </div>
-            )}
 
             <div className="flex items-center justify-between pt-4">
               <button

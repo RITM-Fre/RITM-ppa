@@ -24,7 +24,7 @@ import {
   Paperclip,
 } from 'lucide-react';
 import { Order, User, OrderStatus } from '../types';
-import { getOrders, getUsers, updateOrderStatus, sendMessage, deleteUser } from '../services/api';
+import { getOrders, getUsers, updateOrderStatus, sendMessage, deleteUser, deleteOrder } from '../services/api';
 
 interface StorageFile {
   id: string;
@@ -43,9 +43,10 @@ interface StorageFile {
 interface AdminPanelProps {
   lang: 'fa' | 'en';
   onLogout?: () => void;
+  onNavigateToChat?: (orderCode?: string) => void;
 }
 
-export const AdminPanel: React.FC<AdminPanelProps> = ({ lang, onLogout }) => {
+export const AdminPanel: React.FC<AdminPanelProps> = ({ lang, onLogout, onNavigateToChat }) => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
@@ -77,6 +78,29 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ lang, onLogout }) => {
   // User Deletion state
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
   const [isDeletingUser, setIsDeletingUser] = useState(false);
+
+  // Order Deletion state (Admin Action)
+  const [orderToDelete, setOrderToDelete] = useState<Order | null>(null);
+  const [isDeletingOrder, setIsDeletingOrder] = useState(false);
+
+  const handleDeleteOrder = async () => {
+    if (!orderToDelete) return;
+    setIsDeletingOrder(true);
+    try {
+      const res = await deleteOrder(orderToDelete.id);
+      if (res.success) {
+        setOrders((prev) => prev.filter((o) => o.id !== orderToDelete.id));
+        if (selectedOrder?.id === orderToDelete.id) {
+          setSelectedOrder(null);
+        }
+        setOrderToDelete(null);
+      }
+    } catch (e) {
+      console.error('Failed to delete order:', e);
+    } finally {
+      setIsDeletingOrder(false);
+    }
+  };
 
   // System Settings state
   const [settingsOrdersOpen, setSettingsOrdersOpen] = useState(() => {
@@ -501,15 +525,39 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ lang, onLogout }) => {
                             {new Date(ord.created_at).toLocaleDateString('fa-IR')}
                           </td>
                           <td className="py-3.5 px-4 text-center">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                openOrderDrawer(ord);
-                              }}
-                              className="px-3 py-1 rounded-lg bg-white/5 hover:bg-white/15 text-[#e5e2e1] text-[11px] border border-white/10 transition-colors"
-                            >
-                              مدیریت
-                            </button>
+                            <div className="flex items-center justify-center gap-1.5">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  openOrderDrawer(ord);
+                                }}
+                                className="px-3 py-1 rounded-lg bg-white/5 hover:bg-white/15 text-[#e5e2e1] text-[11px] border border-white/10 transition-colors cursor-pointer"
+                              >
+                                مدیریت
+                              </button>
+                              {onNavigateToChat && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onNavigateToChat(ord.order_code);
+                                  }}
+                                  className="p-1.5 rounded-lg text-[#a3e635] hover:bg-[#a3e635]/15 transition-colors border border-[#a3e635]/20 cursor-pointer"
+                                  title="گفتگوی آنلاین با کارفرما"
+                                >
+                                  <MessageSquare className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setOrderToDelete(ord);
+                                }}
+                                className="p-1 rounded-lg text-red-400 hover:bg-red-500/10 transition-colors border border-transparent hover:border-red-500/20 cursor-pointer"
+                                title="حذف سفارش"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       );
@@ -884,6 +932,42 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ lang, onLogout }) => {
         </div>
       )}
 
+      {/* DELETE ORDER CONFIRMATION MODAL */}
+      {orderToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="glass-panel w-full max-w-md rounded-2xl border border-red-500/40 p-6 shadow-2xl space-y-4 text-right">
+            <div className="w-12 h-12 rounded-xl bg-red-500/20 text-red-400 flex items-center justify-center mx-auto border border-red-500/30">
+              <Trash2 className="w-6 h-6" />
+            </div>
+
+            <div className="text-center space-y-1">
+              <h3 className="text-lg font-bold text-white">حذف کامل سفارش</h3>
+              <p className="text-xs text-[#8c94a4] leading-relaxed">
+                آیا مطمئن هستید که می‌خواهید سفارش{' '}
+                <span className="text-[#d0bcff] font-mono font-bold">{orderToDelete.order_code}</span>{' '}
+                مربوط به <span className="text-white font-bold">{orderToDelete.full_name}</span> را به طور کامل از سیستم حذف کنید؟ این عملیات برگشت‌ناپذیر است.
+              </p>
+            </div>
+
+            <div className="flex items-center justify-center gap-3 pt-2">
+              <button
+                onClick={() => setOrderToDelete(null)}
+                className="px-5 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-white text-xs font-semibold cursor-pointer"
+              >
+                انصراف
+              </button>
+              <button
+                onClick={handleDeleteOrder}
+                disabled={isDeletingOrder}
+                className="px-5 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition-colors cursor-pointer disabled:opacity-50"
+              >
+                {isDeletingOrder ? 'در حال حذف...' : 'بله، حذف کن'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ORDER DETAILS MODAL / DRAWER */}
       {selectedOrder && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
@@ -891,19 +975,29 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ lang, onLogout }) => {
             {/* Close button */}
             <button
               onClick={() => setSelectedOrder(null)}
-              className="absolute top-5 left-5 p-1 rounded-lg bg-white/5 hover:bg-white/10 text-[#958ea0] hover:text-[#e5e2e1] transition-colors"
+              className="absolute top-5 left-5 p-1 rounded-lg bg-white/5 hover:bg-white/10 text-[#958ea0] hover:text-[#e5e2e1] transition-colors cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
 
             {/* Header */}
-            <div className="mb-6">
-              <span className="font-mono text-xs text-[#d0bcff] font-bold block mb-1">
-                {selectedOrder.order_code}
-              </span>
-              <h2 className="text-xl font-bold text-[#e5e2e1]">
-                {selectedOrder.full_name}
-              </h2>
+            <div className="flex items-center justify-between mb-6 pb-3 border-b border-white/10 pl-10">
+              <div>
+                <span className="font-mono text-xs text-[#d0bcff] font-bold block mb-1">
+                  {selectedOrder.order_code}
+                </span>
+                <h2 className="text-xl font-bold text-[#e5e2e1]">
+                  {selectedOrder.full_name}
+                </h2>
+              </div>
+              <button
+                onClick={() => setOrderToDelete(selectedOrder)}
+                className="px-3 py-1.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                title="حذف کامل این سفارش"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>حذف سفارش</span>
+              </button>
             </div>
 
             {messageSuccess && (
@@ -1101,6 +1195,36 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ lang, onLogout }) => {
                 </div>
               </form>
             )}
+
+            {/* Action Bar: Online Chat & Delete Project */}
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-white/10 mt-6">
+              {onNavigateToChat && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const code = selectedOrder.order_code;
+                    setSelectedOrder(null);
+                    onNavigateToChat(code);
+                  }}
+                  className="px-4 py-2.5 rounded-xl bg-[#a3e635]/15 hover:bg-[#a3e635]/25 text-[#a3e635] border border-[#a3e635]/30 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  <MessageSquare className="w-4 h-4" />
+                  <span>گفتگوی آنلاین با این کارفرما</span>
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={() => {
+                  setOrderToDelete(selectedOrder);
+                }}
+                className="px-4 py-2.5 rounded-xl bg-red-600/15 hover:bg-red-600/25 text-red-400 border border-red-500/30 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer mr-auto"
+                title="حذف کامل این سفارش از سیستم"
+              >
+                <Trash2 className="w-4 h-4" />
+                <span>حذف کامل این سفارش</span>
+              </button>
+            </div>
           </div>
         </div>
       )}
