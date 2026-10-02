@@ -230,36 +230,101 @@ export async function deleteUser(userId: number): Promise<{ success: boolean; er
   }
 }
 
-// 5. Client Login (Using Email)
+// 5. Client Login (با پشتیبانی از رمز ساده و هش‌شده)
 export async function clientLogin(
   emailOrUsername: string,
   password?: string
 ): Promise<{ success: boolean; user?: AuthUser; error?: string }> {
-  const cleanEmail = emailOrUsername.trim().toLowerCase();
+  const cleanInput = emailOrUsername.trim().toLowerCase();
+  const cleanPassword = (password || '').trim();
 
-  // Attempt 1: Call backend API
+  // ==================== تلاش ۱: API بک‌اند ====================
   try {
     const res = await fetch('/api/auth/client-login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: cleanEmail, password: (password || '').trim() }),
+      body: JSON.stringify({ email: cleanInput, password: cleanPassword }),
     });
+
     const data = await res.json().catch(() => ({}));
+
     if (res.ok && data.success && data.user) {
       return {
         success: true,
         user: {
           id: data.user.id,
           username: data.user.username,
-          email: data.user.email || cleanEmail,
+          email: data.user.email || cleanInput,
           first_name: data.user.first_name,
           last_name: data.user.last_name,
           is_admin: data.user.is_admin,
         },
       };
-    } else if (data.message) {
+    }
+
+    // اگر API پیام خطا داد، همان را برگردان
+    if (data.message) {
       return { success: false, error: data.message };
     }
+  } catch (backendErr) {
+    console.warn('Backend login failed, falling back to direct Supabase:', backendErr);
+  }
+
+  // ==================== تلاش ۲: جستجوی مستقیم در Supabase ====================
+  try {
+    // جستجو با ایمیل یا نام کاربری
+    const { data: users, error } = await supabase
+      .from('users')
+      .select('*')
+      .or(`username.ilike.%${cleanInput}%,email.ilike.%${cleanInput}%`);
+
+    if (error) throw error;
+
+    if (!users || users.length === 0) {
+      return { success: false, error: 'کاربری با این مشخصات یا ایمیل یافت نشد.' };
+    }
+
+    // بررسی رمز عبور برای هر کاربر پیدا شده
+    for (const user of users) {
+      let passwordMatch = false;
+
+      if (!user.password) {
+        // اگر کاربر رمز ندارد (ورود با OTP)
+        passwordMatch = true;
+      } else if (user.password === cleanPassword) {
+        // رمز plain-text (بدون هش)
+        passwordMatch = true;
+      } else {
+        // بررسی رمز هش‌شده با bcrypt
+        try {
+          const bcrypt = await import('bcryptjs');
+          passwordMatch = await bcrypt.compare(cleanPassword, user.password);
+        } catch {
+          // اگر bcrypt نصب نبود، مقایسه مستقیم انجام می‌شود
+          passwordMatch = user.password === cleanPassword;
+        }
+      }
+
+      if (passwordMatch) {
+        const authUser: AuthUser = {
+          id: user.id,
+          username: user.username || cleanInput,
+          email: user.email || cleanInput,
+          first_name: user.first_name,
+          last_name: user.last_name,
+          is_admin: user.is_admin,
+        };
+        return { success: true, user: authUser };
+      }
+    }
+
+    // اگر هیچ کاربری رمز مطابق نداشت
+    return { success: false, error: 'رمز عبور نادرست است.' };
+  } catch (err: any) {
+    console.error('Direct Supabase login error:', err);
+    return { success: false, error: err.message || 'خطا در ورود به حساب' };
+  }
+}
   } catch (backendErr) {
     console.warn('Backend login fallback:', backendErr);
   }
