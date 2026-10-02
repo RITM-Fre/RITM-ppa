@@ -121,37 +121,66 @@ export default function App() {
   };
 
   const handleNavigateToChat = (orderCode?: string) => {
-    setSelectedChatOrderCode(orderCode || null);
-    changeTab('chat');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
+    setSelectedChatOrderCode(orderCode || n// 5. Client Login (مستقیم از Supabase — بدون بک‌اند)
+export async function clientLogin(
+  emailOrUsername: string,
+  password?: string
+): Promise<{ success: boolean; user?: AuthUser; error?: string }> {
+  const cleanInput = emailOrUsername.trim().toLowerCase();
+  const cleanPassword = (password || '').trim();
 
-  const handleAdminLoginSuccess = (token: string) => {
-    setAdminToken(token);
-    try {
-      localStorage.setItem('ritm_admin_token', token);
-    } catch (e) {}
-    setShowAdminLoginModal(false);
-    setActiveTab('admin');
-  };
+  try {
+    // جستجو با ایمیل یا نام کاربری
+    const { data: users, error } = await supabase
+      .from('users')
+      .select('*')
+      .or(`username.ilike.%${cleanInput}%,email.ilike.%${cleanInput}%`);
 
-  const handleAdminLogout = () => {
-    setAdminToken(null);
-    try {
-      localStorage.removeItem('ritm_admin_token');
-    } catch (e) {}
-    changeTab('order');
-  };
+    if (error) throw error;
 
-  // Handle clicking the corner button
-  const handleCornerAdminClick = () => {
-    if (isAdminLoggedIn) {
-      setActiveTab('admin');
-    } else {
-      setShowAdminLoginModal(true);
+    if (!users || users.length === 0) {
+      return { success: false, error: 'کاربری با این مشخصات یا ایمیل یافت نشد.' };
     }
-  };
 
+    // بررسی رمز عبور برای هر کاربر پیدا شده
+    for (const user of users) {
+      let passwordMatch = false;
+
+      if (!user.password) {
+        // کاربر رمز ندارد (ورود با OTP)
+        passwordMatch = true;
+      } else if (user.password === cleanPassword) {
+        // رمز plain-text
+        passwordMatch = true;
+      } else {
+        // تلاش برای بررسی رمز هش‌شده
+        try {
+          const bcrypt = await import('bcryptjs');
+          passwordMatch = await bcrypt.compare(cleanPassword, user.password);
+        } catch {
+          passwordMatch = user.password === cleanPassword;
+        }
+      }
+
+      if (passwordMatch) {
+        const authUser: AuthUser = {
+          id: user.id,
+          username: user.username || cleanInput,
+          email: user.email || cleanInput,
+          first_name: user.first_name,
+          last_name: user.last_name,
+          is_admin: user.is_admin,
+        };
+        return { success: true, user: authUser };
+      }
+    }
+
+    return { success: false, error: 'رمز عبور نادرست است.' };
+  } catch (err: any) {
+    console.error('Direct Supabase login error:', err);
+    return { success: false, error: err.message || 'خطا در ورود به حساب' };
+  }
+}
   return (
     <div
       dir={lang === 'fa' ? 'rtl' : 'ltr'}
