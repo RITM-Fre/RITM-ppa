@@ -1,8 +1,6 @@
 @import "tailwindcss";
 
-/* ============================================================
-   IRANSans Persian Font Definition & Fallback
-   ============================================================ */
+/* IRANSans Persian Font Definition & Fallback */
 @font-face {
   font-family: 'IRANSans';
   font-style: normal;
@@ -11,6 +9,7 @@
        url('https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/fonts/webfonts/Vazirmatn-Light.woff2') format('woff2');
   font-display: swap;
 }
+
 @font-face {
   font-family: 'IRANSans';
   font-style: normal;
@@ -19,6 +18,7 @@
        url('https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/fonts/webfonts/Vazirmatn-Regular.woff2') format('woff2');
   font-display: swap;
 }
+
 @font-face {
   font-family: 'IRANSans';
   font-style: normal;
@@ -27,6 +27,7 @@
        url('https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/fonts/webfonts/Vazirmatn-Medium.woff2') format('woff2');
   font-display: swap;
 }
+
 @font-face {
   font-family: 'IRANSans';
   font-style: normal;
@@ -35,6 +36,7 @@
        url('https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/fonts/webfonts/Vazirmatn-Bold.woff2') format('woff2');
   font-display: swap;
 }
+
 @font-face {
   font-family: 'IRANSans';
   font-style: normal;
@@ -44,260 +46,51 @@
   font-display: swap;
 }
 
-/* ============================================================
-   THEME TOKENS
-   ============================================================ */
-:root {
-  --bg-base:        #07080d;
-  --bg-elev:        #0d0f17;
-  --bg-panel:       #12141f;
-  --bg-card:        #161a28;
-  --bg-card-hover:  #1c2033;
-
-  --border-soft:    rgba(255, 255, 255, 0.07);
-  --border-strong:  rgba(255, 255, 255, 0.14);
-
-  --text-primary:   #f4f5fa;
-  --text-muted:     #a6adc8;
-
-  --accent-1:       #8b5cf6;   /* violet */
-  --accent-2:       #22d3ee;   /* cyan   */
-  --accent-3:       #f472b6;   /* pink   */
-  --accent-glow:    rgba(139, 92, 246, 0.45);
-
-  --radius-lg:      18px;
-  --radius-md:      14px;
-}
-
-/* ============================================================
-   BASE LAYER
-   ============================================================ */
 @layer base {
   html, body, button, input, textarea, select {
     font-family: 'IRANSans', 'IRANSansX', 'Vazirmatn', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
   }
 
-  html {
-    scroll-behavior: smooth;
-    -webkit-text-size-adjust: 100%;
-  }
-
   body {
-    background-color: var(--bg-base);
-    color: var(--text-primary);
+    background-color: #0b0c10;
+    color: #f1f2f6;
     overflow-x: hidden;
-    min-height: 100vh;
-    position: relative;
-    line-height: 1.7;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-  }
-
-  /* Ambient neon background — fixed so it never scrolls */
-  body::before {
-    content: "";
-    position: fixed;
-    inset: 0;
-    z-index: -2;
-    background:
-      radial-gradient(ellipse 80% 60% at 15% -10%, rgba(139, 92, 246, 0.18), transparent 60%),
-      radial-gradient(ellipse 70% 50% at 90% 10%,  rgba(34, 211, 238, 0.14), transparent 60%),
-      radial-gradient(ellipse 90% 60% at 50% 110%, rgba(244, 114, 182, 0.12), transparent 60%),
-      var(--bg-base);
-    pointer-events: none;
-  }
-
-  /* Subtle grid texture overlay */
-  body::after {
-    content: "";
-    position: fixed;
-    inset: 0;
-    z-index: -1;
-    background-image:
-      linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
-    background-size: 44px 44px;
-    mask-image: radial-gradient(ellipse at 50% 30%, black 30%, transparent 75%);
-    -webkit-mask-image: radial-gradient(ellipse at 50% 30%, black 30%, transparent 75%);
-    pointer-events: none;
   }
 
   code, pre, .font-mono {
-    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace !important;
-    font-feature-settings: "liga" 1, "calt" 1;
-  }
-
-  ::selection {
-    background: var(--accent-1);
-    color: #fff;
-  }
-
-  /* Nicer focus rings */
-  :focus-visible {
-    outline: 2px solid var(--accent-2);
-    outline-offset: 3px;
-    border-radius: 6px;
-  }
-
-  h1, h2, h3, h4 {
-    letter-spacing: -0.01em;
-    line-height: 1.3;
+    font-family: 'JetBrains Mono', monospace !important;
   }
 }
 
-/* ============================================================
-   GLASS PANELS — real frosted glass with backdrop blur
-   ============================================================ */
+/* Crisp, fast glass cards without browser GPU lag */
 .glass-panel {
-  position: relative;
-  background: linear-gradient(
-    160deg,
-    rgba(30, 34, 52, 0.72) 0%,
-    rgba(18, 20, 31, 0.85) 100%
-  );
-  backdrop-filter: blur(14px) saturate(140%);
-  -webkit-backdrop-filter: blur(14px) saturate(140%);
-  border: 1px solid var(--border-soft);
-  border-radius: var(--radius-lg);
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.05) inset,
-    0 20px 50px -20px rgba(0, 0, 0, 0.7);
+  background-color: #12141c;
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-/* Thin gradient top edge on glass panels */
-.glass-panel::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  padding: 1px;
-  background: linear-gradient(
-    120deg,
-    rgba(139, 92, 246, 0.5),
-    rgba(34, 211, 238, 0.35),
-    rgba(244, 114, 182, 0.4)
-  );
-  -webkit-mask:
-    linear-gradient(#000 0 0) content-box,
-    linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-          mask-composite: exclude;
-  opacity: 0.35;
-  pointer-events: none;
-  transition: opacity 0.3s ease;
-}
-.glass-panel:hover::before { opacity: 0.7; }
-
-/* ============================================================
-   GLASS CARDS — the star of the show ✨
-   ============================================================ */
 .glass-card {
-  position: relative;
-  background: linear-gradient(
-    165deg,
-    rgba(28, 32, 50, 0.85) 0%,
-    rgba(22, 24, 35, 0.9) 100%
-  );
-  backdrop-filter: blur(10px) saturate(130%);
-  -webkit-backdrop-filter: blur(10px) saturate(130%);
-  border: 1px solid var(--border-soft);
-  border-radius: var(--radius-md);
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.04) inset,
-    0 10px 30px -18px rgba(0, 0, 0, 0.8);
-  transition:
-    transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1),
-    border-color 0.3s ease,
-    background 0.3s ease,
-    box-shadow 0.35s ease;
-  overflow: hidden;
-  isolation: isolate;
-}
-
-/* Moving light sweep on hover */
-.glass-card::after {
-  content: "";
-  position: absolute;
-  inset: -40%;
-  background: conic-gradient(
-    from 0deg,
-    transparent 0deg,
-    rgba(139, 92, 246, 0.25) 60deg,
-    rgba(34, 211, 238, 0.25) 120deg,
-    transparent 180deg
-  );
-  opacity: 0;
-  z-index: -1;
-  transition: opacity 0.4s ease;
-  animation: spin-glow 6s linear infinite;
+  background-color: #161823;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: border-color 0.15s ease, background-color 0.15s ease;
 }
 
 .glass-card:hover {
-  transform: translateY(-6px);
-  background: linear-gradient(
-    165deg,
-    rgba(36, 40, 62, 0.9) 0%,
-    rgba(28, 31, 46, 0.95) 100%
-  );
-  border-color: rgba(139, 92, 246, 0.45);
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.08) inset,
-    0 0 0 1px rgba(139, 92, 246, 0.15),
-    0 20px 45px -18px var(--accent-glow),
-    0 0 60px -30px rgba(34, 211, 238, 0.6);
+  background-color: #1c1f2e;
+  border-color: rgba(208, 188, 255, 0.35);
 }
 
-.glass-card:hover::after { opacity: 0.55; }
-
-@keyframes spin-glow {
-  to { transform: rotate(360deg); }
-}
-
-/* Respect users who don't want motion */
-@media (prefers-reduced-motion: reduce) {
-  .glass-card,
-  .glass-card::after,
-  .glass-panel::before {
-    transition: none !important;
-    animation: none !important;
-  }
-  .glass-card:hover { transform: none; }
-}
-
-/* ============================================================
-   BUTTONS / LINKS — extra polish
-   ============================================================ */
-button, a {
-  transition: color 0.2s ease, background 0.2s ease, transform 0.15s ease;
-}
-
-button:active, a:active {
-  transform: scale(0.97);
-}
-
-/* ============================================================
-   MODERN SCROLLBAR
-   ============================================================ */
+/* Fast modern scrollbar */
 ::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
+  width: 6px;
+  height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: var(--bg-base);
+  background: #0b0c10;
 }
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, var(--accent-1), var(--accent-2));
-  border-radius: 10px;
-  border: 2px solid var(--bg-base);
-  background-clip: padding-box;
+  background: #222638;
+  border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, var(--accent-3), var(--accent-1));
-  background-clip: padding-box;
-}
-
-/* Firefox */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: var(--accent-1) var(--bg-base);
+  background: #373d59;
 }
