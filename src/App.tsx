@@ -121,7 +121,7 @@ export default function App() {
   };
 
   const handleNavigateToChat = (orderCode?: string) => {
-    setSelectedChatOrderCode(orderCode || n// 5. Client Login (مستقیم از Supabase — بدون بک‌اند)
+    setSelectedChatOrderCode(orderCode || n
 export async function clientLogin(
   emailOrUsername: string,
   password?: string
