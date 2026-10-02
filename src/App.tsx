@@ -15,7 +15,7 @@ import { BotHealthTerminal } from './components/BotHealthTerminal';
 import { ProjectChat } from './components/ProjectChat';
 import { Footer } from './components/Footer';
 import { ProjectType, Order, AuthUser } from './types';
-import { Send, Shield, Lock, CheckCircle2, X } from 'lucide-react';
+import { Send, Shield, Lock, X } from 'lucide-react';
 
 import { getOrders } from './services/api';
 
@@ -41,7 +41,6 @@ export default function App() {
   const [showAdminLoginModal, setShowAdminLoginModal] = useState<boolean>(false);
   const [selectedChatOrderCode, setSelectedChatOrderCode] = useState<string | null>(null);
 
-  // Authentication states
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(() => {
     try {
       const stored = localStorage.getItem('ritm_client_user');
@@ -62,7 +61,6 @@ export default function App() {
   const isAdminLoggedIn = Boolean(adminToken);
 
   const changeTab = (tab: 'home' | 'order' | 'admin' | 'portfolio' | 'status' | 'client' | 'chat') => {
-    // If user tries to open admin or status tab without being logged in, show login modal
     if ((tab === 'admin' || tab === 'status') && !isAdminLoggedIn) {
       setShowAdminLoginModal(true);
       return;
@@ -76,7 +74,6 @@ export default function App() {
     } catch (e) {}
   };
 
-  // Sync pending orders count for admin notification
   useEffect(() => {
     const checkPending = async () => {
       try {
@@ -159,7 +156,6 @@ export default function App() {
       dir={lang === 'fa' ? 'rtl' : 'ltr'}
       className="min-h-screen flex flex-col bg-[#0b0c10] text-[#f1f2f6] relative overflow-hidden font-sans"
     >
-      {/* Top Navigation */}
       <Navbar
         activeTab={activeTab}
         setActiveTab={changeTab}
@@ -172,7 +168,6 @@ export default function App() {
         onOpenAdminLogin={() => setShowAdminLoginModal(true)}
       />
 
-      {/* Global Announcement Banner (if configured in Admin settings) */}
       {typeof window !== 'undefined' && localStorage.getItem('ritm_announcement') && (
         <div className="bg-gradient-to-r from-[#d0bcff]/15 via-[#38bdf8]/15 to-[#d0bcff]/15 border-b border-white/10 px-4 py-2 text-center text-xs text-[#d0bcff] font-medium flex items-center justify-center gap-2">
           <span>📢</span>
@@ -180,9 +175,7 @@ export default function App() {
         </div>
       )}
 
-      {/* Main Content Area */}
       <main className="flex-1 relative z-10 w-full pt-20 sm:pt-24 pb-24 md:pb-8">
-        {/* VIEW 0: STUDIO HOME EXPERIENCE */}
         {activeTab === 'home' && (
           <HomeView
             lang={lang}
@@ -192,7 +185,6 @@ export default function App() {
           />
         )}
 
-        {/* VIEW 1: ORDER WIZARD */}
         {activeTab === 'order' && (
           <OrderWizard
             lang={lang}
@@ -203,7 +195,6 @@ export default function App() {
           />
         )}
 
-        {/* VIEW 2: CLIENT PORTAL & WORKFLOW TRACKING */}
         {activeTab === 'client' && (
           <ClientPortal
             lang={lang}
@@ -216,7 +207,6 @@ export default function App() {
           />
         )}
 
-        {/* VIEW 3: PORTFOLIO & SERVICES */}
         {activeTab === 'portfolio' && (
           <PortfolioShowcase
             lang={lang}
@@ -224,7 +214,6 @@ export default function App() {
           />
         )}
 
-        {/* VIEW 4: ONLINE PROJECT CHAT / DISCUSSION (Strictly Private 1-to-1) */}
         {activeTab === 'chat' && (
           <ProjectChat
             lang={lang}
@@ -237,7 +226,6 @@ export default function App() {
           />
         )}
 
-        {/* VIEW 5: ADMIN MANAGEMENT HUB (Protected: Only accessible when logged in) */}
         {activeTab === 'admin' && (
           isAdminLoggedIn ? (
             <AdminPanel
@@ -254,7 +242,6 @@ export default function App() {
           )
         )}
 
-        {/* VIEW 6: SYSTEM LOGS (Protected: Also ONLY accessible when admin is logged in!) */}
         {activeTab === 'status' && (
           isAdminLoggedIn ? (
             <BotHealthTerminal lang={lang} />
@@ -268,7 +255,6 @@ export default function App() {
         )}
       </main>
 
-      {/* CORNER BUTTON: "پنل ادمین" AS REQUESTED BY USER (Desktop only - mobile has bottom dock) */}
       <div className="hidden md:flex fixed bottom-6 right-6 z-40 items-center gap-2">
         <button
           onClick={handleCornerAdminClick}
@@ -289,7 +275,6 @@ export default function App() {
         </button>
       </div>
 
-      {/* Floating direct Telegram Channel link button on bottom-left */}
       <a
         href="https://t.me/RITM_FreeLancer"
         target="_blank"
@@ -303,7 +288,6 @@ export default function App() {
         </span>
       </a>
 
-      {/* ADMIN LOGIN MODAL (When corner button or protected route is clicked) */}
       {showAdminLoginModal && !isAdminLoggedIn && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md">
           <div className="relative w-full max-w-md">
@@ -322,7 +306,6 @@ export default function App() {
         </div>
       )}
 
-      {/* Footer */}
       <Footer lang={lang} />
     </div>
   );
