@@ -25,7 +25,6 @@ import {
 import { Order, AuthUser, OrderStatus, ProjectType } from '../types';
 import {
   clientLogin,
-  clientLoginWithOtp,
   clientRegister,
   getClientOrders,
   cancelOrderByClient,
@@ -130,70 +129,6 @@ export const ClientPortal: React.FC<ClientPortalProps> = ({
       alert(err.message || (lang === 'fa' ? 'خطا در اتصال به سرور' : 'Connection error'));
     } finally {
       setIsCancellingOrder(false);
-    }
-  };
-
-  // Login with OTP State (Required verification code on login)
-  const [loginStep, setLoginStep] = useState<1 | 2>(1);
-  const [loginOtpCode, setLoginOtpCode] = useState('');
-  const [loginDebugCode, setLoginDebugCode] = useState('');
-  const [isSendingLoginOtp, setIsSendingLoginOtp] = useState(false);
-  const [loginSuccessMsg, setLoginSuccessMsg] = useState('');
-
-  // Step 1: Send OTP to user's email for login
-  const handleSendLoginOtp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setErrorMsg('');
-    setLoginSuccessMsg('');
-    const cleanEmail = email.trim().toLowerCase();
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(cleanEmail)) {
-      setErrorMsg(lang === 'fa' ? 'لطفاً یک آدرس ایمیل معتبر وارد کنید.' : 'Invalid email format.');
-      return;
-    }
-
-    setIsSendingLoginOtp(true);
-    try {
-      const res = await sendOtpEmail(cleanEmail, 'login');
-      if (res.success) {
-        setLoginStep(2);
-        setLoginSuccessMsg(res.message || (lang === 'fa' ? `کد تایید ۶ رقمی به ایمیل ${cleanEmail} ارسال شد.` : 'Verification code sent.'));
-        if (res.debugCode) {
-          setLoginDebugCode(res.debugCode);
-        }
-      } else {
-        setErrorMsg(res.error || (lang === 'fa' ? 'خطا در ارسال کد تایید.' : 'Failed to send verification code.'));
-      }
-    } catch (e: any) {
-      setErrorMsg(e.message || (lang === 'fa' ? 'خطا در ارتباط با سرور.' : 'Server connection error.'));
-    } finally {
-      setIsSendingLoginOtp(false);
-    }
-  };
-
-  // Step 2: Verify OTP and log in
-  const handleVerifyLoginOtpSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setErrorMsg('');
-    const cleanEmail = email.trim().toLowerCase();
-    const cleanCode = loginOtpCode.trim();
-    if (!cleanCode || cleanCode.length < 4) {
-      setErrorMsg(lang === 'fa' ? 'لطفاً کد تایید دریافتی را به طور کامل وارد کنید.' : 'Please enter the verification code.');
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-      const data = await clientLoginWithOtp(cleanEmail, cleanCode);
-      if (data.success && data.user) {
-        onLogin(data.user);
-      } else {
-        setErrorMsg(data.error || (lang === 'fa' ? 'کد تایید وارد شده نادرست یا منقضی شده است.' : 'Invalid verification code.'));
-      }
-    } catch (e: any) {
-      setErrorMsg(e.message || (lang === 'fa' ? 'خطا در تایید کد.' : 'Verification error.'));
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -451,125 +386,45 @@ export const ClientPortal: React.FC<ClientPortalProps> = ({
             </div>
           )}
 
-          {/* LOGIN FORM (STEP 1: Enter Email & Request Verification Code) */}
-          {authMode === 'login' && loginStep === 1 && (
-            <form onSubmit={handleSendLoginOtp} className="space-y-4 text-right">
+          {/* LOGIN FORM */}
+          {authMode === 'login' && (
+            <form onSubmit={handleLoginSubmit} className="space-y-4 text-right">
               <div>
                 <label className="block text-xs font-semibold text-[#958ea0] mb-1.5">
-                  {lang === 'fa' ? 'آدرس ایمیل شما جهت دریافت کد تایید:' : 'Email Address for Verification Code:'}
-                </label>
-                <div className="relative">
-                  <input
-                    type="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="name@example.com"
-                    className="w-full bg-black/40 border border-white/15 focus:border-[#d0bcff] rounded-xl px-4 py-2.5 text-xs text-[#e5e2e1] outline-none dir-ltr text-left"
-                  />
-                  <Mail className="w-4 h-4 text-[#958ea0] absolute left-3 top-3 pointer-events-none" />
-                </div>
-                <p className="text-[11px] text-[#958ea0] mt-1.5 leading-relaxed">
-                  {lang === 'fa'
-                    ? 'جهت حفظ امنیت و محرمانگی، کد تایید یکبار مصرف به ایمیل شما ارسال خواهد شد.'
-                    : 'A verification code will be sent to your email to verify your identity.'}
-                </p>
-              </div>
-
-              <button
-                type="submit"
-                disabled={isSendingLoginOtp || !email.trim()}
-                className="w-full py-3 rounded-xl bg-[#d0bcff] hover:bg-[#d0bcff]/90 text-[#131313] font-bold text-xs transition-all shadow-lg shadow-[#d0bcff]/20 disabled:opacity-50 mt-2 flex items-center justify-center gap-2 cursor-pointer"
-              >
-                {isSendingLoginOtp ? (
-                  <>
-                    <span className="w-4 h-4 border-2 border-[#131313] border-t-transparent rounded-full animate-spin" />
-                    <span>{lang === 'fa' ? 'در حال ارسال کد تایید...' : 'Sending code...'}</span>
-                  </>
-                ) : (
-                  <>
-                    <KeyRound className="w-4 h-4" />
-                    <span>{lang === 'fa' ? 'دریافت کد تایید ورود به حساب' : 'Send Verification Code'}</span>
-                  </>
-                )}
-              </button>
-            </form>
-          )}
-
-          {/* LOGIN FORM (STEP 2: Enter Verification Code) */}
-          {authMode === 'login' && loginStep === 2 && (
-            <form onSubmit={handleVerifyLoginOtpSubmit} className="space-y-4 text-right">
-              <div className="p-3 rounded-xl bg-[#d0bcff]/10 border border-[#d0bcff]/30 text-[#d0bcff] text-xs leading-relaxed">
-                {loginSuccessMsg || (lang === 'fa' ? `کد تایید ۶ رقمی به ایمیل ${email} ارسال شد.` : `Code sent to ${email}`)}
-              </div>
-
-              {loginDebugCode && (
-                <div
-                  onClick={() => setLoginOtpCode(loginDebugCode)}
-                  className="p-2.5 rounded-xl bg-[#ffb869]/10 border border-[#ffb869]/30 text-[#ffb869] text-xs flex items-center justify-between cursor-pointer hover:bg-[#ffb869]/20 transition-colors"
-                  title="کلیک برای درج خودکار کد"
-                >
-                  <span className="font-mono font-bold">💡 کد تایید دریافتی: {loginDebugCode}</span>
-                  <span className="text-[10px] underline">درج خودکار</span>
-                </div>
-              )}
-
-              <div>
-                <label className="block text-xs font-semibold text-[#958ea0] mb-1.5">
-                  {lang === 'fa' ? 'کد تایید ۶ رقمی دریافتی:' : '6-digit Verification Code:'}
+                  {lang === 'fa' ? 'آدرس ایمیل شما:' : 'Email Address:'}
                 </label>
                 <input
-                  type="text"
-                  maxLength={6}
+                  type="email"
                   required
-                  autoFocus
-                  value={loginOtpCode}
-                  onChange={(e) => setLoginOtpCode(e.target.value.replace(/\D/g, ''))}
-                  placeholder="------"
-                  className="w-full bg-black/40 border border-white/15 focus:border-[#d0bcff] rounded-xl px-4 py-3 text-lg font-mono text-center tracking-[0.5em] text-[#d0bcff] outline-none dir-ltr"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="name@example.com"
+                  className="w-full bg-black/40 border border-white/15 focus:border-[#d0bcff] rounded-xl px-4 py-2.5 text-xs text-[#e5e2e1] outline-none dir-ltr text-left"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-[#958ea0] mb-1.5">
+                  {lang === 'fa' ? 'رمز عبور:' : 'Password:'}
+                </label>
+                <input
+                  type="password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="w-full bg-black/40 border border-white/15 focus:border-[#d0bcff] rounded-xl px-4 py-2.5 text-xs text-[#e5e2e1] outline-none dir-ltr text-left"
                 />
               </div>
 
               <button
                 type="submit"
-                disabled={isSubmitting || loginOtpCode.length < 4}
+                disabled={isSubmitting}
                 className="w-full py-3 rounded-xl bg-[#d0bcff] hover:bg-[#d0bcff]/90 text-[#131313] font-bold text-xs transition-all shadow-lg shadow-[#d0bcff]/20 disabled:opacity-50 mt-2 flex items-center justify-center gap-2 cursor-pointer"
               >
-                {isSubmitting ? (
-                  <>
-                    <span className="w-4 h-4 border-2 border-[#131313] border-t-transparent rounded-full animate-spin" />
-                    <span>{lang === 'fa' ? 'در حال تایید و ورود...' : 'Verifying...'}</span>
-                  </>
-                ) : (
-                  <>
-                    <LogIn className="w-4 h-4" />
-                    <span>{lang === 'fa' ? 'تایید کد و ورود به حساب' : 'Verify & Log In'}</span>
-                  </>
-                )}
+                <LogIn className="w-4 h-4" />
+                <span>{isSubmitting ? (lang === 'fa' ? 'در حال ورود...' : 'Signing in...') : (lang === 'fa' ? 'ورود به حساب کاربری' : 'Sign In')}</span>
               </button>
-
-              <div className="flex items-center justify-between text-xs pt-1">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setLoginStep(1);
-                    setLoginOtpCode('');
-                    setErrorMsg('');
-                  }}
-                  className="text-[#958ea0] hover:text-white transition-colors cursor-pointer"
-                >
-                  {lang === 'fa' ? '← تغییر آدرس ایمیل' : '← Change Email'}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleSendLoginOtp}
-                  disabled={isSendingLoginOtp}
-                  className="text-[#d0bcff] hover:underline disabled:opacity-50 cursor-pointer"
-                >
-                  {lang === 'fa' ? 'ارسال مجدد کد تایید' : 'Resend Code'}
-                </button>
-              </div>
             </form>
           )}
 

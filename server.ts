@@ -85,14 +85,24 @@ export interface ChatMessageRecord {
 function loadChatMessages(): ChatMessageRecord[] {
   try {
     if (fs.existsSync(CHAT_FILE)) {
-      const msgs: ChatMessageRecord[] = JSON.parse(fs.readFileSync(CHAT_FILE, 'utf-8'));
-      // Strictly private: exclude any legacy public/general rooms
-      return msgs.filter((m) => m.orderCode !== 'RITM-GENERAL');
+      return JSON.parse(fs.readFileSync(CHAT_FILE, 'utf-8'));
     }
   } catch (e) {
     console.error('Error loading chat messages:', e);
   }
-  return [];
+  const defaultMessages: ChatMessageRecord[] = [
+    {
+      id: 'chat-welcome-1',
+      orderCode: 'RITM-GENERAL',
+      clientName: 'استودیو ریتم',
+      senderRole: 'admin',
+      text: 'سلام و احترام! به سامانه گفتگوی اختصاصی استودیو ریتم خوش آمدید. تمامی سوالات، هماهنگی‌های فنی، اصلاحات و مراحل اجرای پروژه شما در این بخش به صورت زنده پاسخ داده می‌شود.',
+      createdAt: new Date().toISOString(),
+      read: true,
+    },
+  ];
+  saveChatMessages(defaultMessages);
+  return defaultMessages;
 }
 
 function saveChatMessages(messages: ChatMessageRecord[]) {
@@ -1203,7 +1213,7 @@ interface OtpRecord {
   code: string;
   email: string;
   expiresAt: number;
-  purpose: 'reset' | 'register' | 'login';
+  purpose: 'reset' | 'register';
 }
 const otpStore = new Map<string, OtpRecord>();
 
@@ -1243,28 +1253,15 @@ app.post('/api/auth/send-otp', async (req: Request, res: Response) => {
     let emailSent = false;
     if (mailTransporter) {
       try {
-        const subjectTitle =
-          purpose === 'login'
-            ? 'کد تایید ورود به استودیو ریتم'
-            : purpose === 'reset'
-            ? 'کد بازیابی رمز عبور استودیو ریتم'
-            : 'کد تایید ثبت‌نام در استودیو ریتم';
-
         await mailTransporter.sendMail({
           from: `"استودیو ریتم" <${process.env.SMTP_USER}>`,
           to: cleanEmail,
-          subject: subjectTitle,
+          subject: purpose === 'reset' ? 'کد بازیابی رمز عبور استودیو ریتم' : 'کد تایید ایمیل استودیو ریتم',
           html: `
             <div dir="rtl" style="font-family: Tahoma, sans-serif; background-color: #0d0f17; color: #ffffff; padding: 30px; border-radius: 16px; max-width: 500px; margin: auto; text-align: right; border: 1px solid rgba(255,255,255,0.1);">
               <h2 style="color: #d0bcff; margin-bottom: 20px;">استودیو ریتم | RITM Studio</h2>
               <p style="color: #e5e2e1; font-size: 14px; line-height: 1.8;">سلام کاربر گرامی،</p>
-              <p style="color: #958ea0; font-size: 13px;">کد تایید شما جهت ${
-                purpose === 'login'
-                  ? 'ورود به حساب کاربری'
-                  : purpose === 'reset'
-                  ? 'بازیابی رمز عبور'
-                  : 'تایید حساب کاربری'
-              }:</p>
+              <p style="color: #958ea0; font-size: 13px;">کد تایید شما جهت ${purpose === 'reset' ? 'بازیابی رمز عبور' : 'تایید حساب کاربری'}:</p>
               <div style="background-color: #161823; border: 1px dashed #d0bcff; border-radius: 12px; padding: 16px; text-align: center; margin: 24px 0;">
                 <span style="font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #a3e635; font-family: monospace;">${code}</span>
               </div>
@@ -1319,78 +1316,7 @@ app.post('/api/auth/verify-otp', (req: Request, res: Response) => {
   }
 });
 
-// Auth 3.3: Verify OTP for Login and return user (Required verification on login)
-app.post('/api/auth/verify-login-otp', async (req: Request, res: Response) => {
-  try {
-    const { email, code } = req.body;
-    const cleanEmail = (email || '').trim().toLowerCase();
-    const cleanCode = (code || '').trim();
-
-    const record = otpStore.get(cleanEmail);
-    if (!record) {
-      return res.status(400).json({ success: false, message: 'کد تاییدی برای این ایمیل یافت نشد یا منقضی شده است.' });
-    }
-
-    if (Date.now() > record.expiresAt) {
-      otpStore.delete(cleanEmail);
-      return res.status(400).json({ success: false, message: 'کد تایید منقضی شده است. لطفاً کد جدید دریافت کنید.' });
-    }
-
-    if (record.code !== cleanCode) {
-      return res.status(400).json({ success: false, message: 'کد تایید وارد شده نادرست است.' });
-    }
-
-    otpStore.delete(cleanEmail);
-
-    // Look up user or create new user
-    let { data: user } = await supabase
-      .from('users')
-      .select('id, username, first_name, last_name, is_admin')
-      .ilike('username', cleanEmail)
-      .maybeSingle();
-
-    if (!user) {
-      const defaultName = cleanEmail.split('@')[0] || `user_${Date.now()}`;
-      const { data: newUser, error: insertError } = await supabase
-        .from('users')
-        .insert({
-          username: cleanEmail,
-          first_name: defaultName,
-          telegram_id: Math.floor(100000000 + Math.random() * 900000000),
-          is_admin: false,
-          created_at: new Date().toISOString(),
-          last_seen: new Date().toISOString(),
-        })
-        .select()
-        .single();
-
-      if (insertError) throw insertError;
-      user = newUser;
-    } else {
-      await supabase.from('users').update({ last_seen: new Date().toISOString() }).eq('id', user.id);
-    }
-
-    if (!user) {
-      return res.status(500).json({ success: false, message: 'خطا در ثبت یا دریافت اطلاعات کاربر.' });
-    }
-
-    res.json({
-      success: true,
-      user: {
-        id: user.id,
-        username: user.username,
-        email: cleanEmail,
-        first_name: user.first_name,
-        last_name: user.last_name,
-        is_admin: user.is_admin,
-      },
-    });
-  } catch (err: any) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
-
-// Auth 3.4: Reset Password with OTP
+// Auth 3.3: Reset Password with OTP
 app.post('/api/auth/reset-password', async (req: Request, res: Response) => {
   try {
     const { email, code, newPassword } = req.body;
@@ -1454,37 +1380,41 @@ app.get('/api/client/my-orders', async (req: Request, res: Response) => {
   }
 });
 
-// ==================== ONLINE PROJECT CHAT API (1-TO-1 PRIVATE ONLY) ====================
-// Get messages for a specific orderCode or client userId (Strictly private 1-to-1)
+// ==================== ONLINE PROJECT CHAT API ====================
+// Get messages for a specific orderCode or user
 app.get('/api/chat/messages', (req: Request, res: Response) => {
   try {
     const orderCode = (req.query.orderCode as string || '').trim();
     const userId = req.query.userId ? parseInt(req.query.userId as string, 10) : undefined;
     const all = req.query.all === 'true';
 
-    const allMessages = loadChatMessages().filter((m) => m.orderCode !== 'RITM-GENERAL');
+    const allMessages = loadChatMessages();
 
     if (all) {
       return res.json({ success: true, messages: allMessages });
     }
 
     if (orderCode) {
-      const filtered = allMessages.filter((m) => m.orderCode === orderCode);
+      const filtered = allMessages.filter(
+        (m) => m.orderCode === orderCode || m.orderCode === 'RITM-GENERAL'
+      );
       return res.json({ success: true, messages: filtered });
     }
 
     if (userId) {
-      const filtered = allMessages.filter((m) => m.userId === userId);
+      const filtered = allMessages.filter(
+        (m) => m.userId === userId || m.orderCode === 'RITM-GENERAL'
+      );
       return res.json({ success: true, messages: filtered });
     }
 
-    return res.json({ success: true, messages: [] });
+    res.json({ success: true, messages: allMessages });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });
   }
 });
 
-// Send new message (Strictly between client and freelancer)
+// Send new message
 app.post('/api/chat/send', async (req: Request, res: Response) => {
   try {
     const { orderCode, userId, clientName, senderRole, text } = req.body;
@@ -1493,20 +1423,13 @@ app.post('/api/chat/send', async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: 'متن پیام نمی‌تواند خالی باشد.' });
     }
 
-    // Must be tied to either an order or this client's unique thread
-    const targetRoom = (orderCode && orderCode !== 'RITM-GENERAL')
-      ? orderCode.trim()
-      : userId
-      ? `client-${userId}`
-      : 'inquiry';
-
     const allMessages = loadChatMessages();
 
     const newMsg: ChatMessageRecord = {
       id: `chat-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-      orderCode: targetRoom,
+      orderCode: orderCode?.trim() || 'RITM-GENERAL',
       userId: userId || null,
-      clientName: (clientName || (senderRole === 'admin' ? 'فریلنسر و مدیریت ریتم' : 'کارفرما')).trim(),
+      clientName: (clientName || (senderRole === 'admin' ? 'مدیریت ریتم' : 'کاربر')).trim(),
       senderRole: senderRole === 'admin' ? 'admin' : 'client',
       text: text.trim(),
       createdAt: new Date().toISOString(),
@@ -1516,8 +1439,8 @@ app.post('/api/chat/send', async (req: Request, res: Response) => {
     allMessages.push(newMsg);
     saveChatMessages(allMessages);
 
-    // Also persist in order_messages in Supabase if linked to an actual order
-    if (orderCode && !orderCode.startsWith('client-') && orderCode !== 'inquiry') {
+    // Also persist in order_messages in Supabase if orderCode exists
+    if (orderCode && orderCode !== 'RITM-GENERAL') {
       try {
         const { data: order } = await supabase
           .from('orders')
@@ -1544,10 +1467,10 @@ app.post('/api/chat/send', async (req: Request, res: Response) => {
   }
 });
 
-// Get conversations list (Freelancer / Admin overview)
+// Get conversations list (Admin overview)
 app.get('/api/chat/conversations', async (req: Request, res: Response) => {
   try {
-    const allMessages = loadChatMessages().filter((m) => m.orderCode !== 'RITM-GENERAL');
+    const allMessages = loadChatMessages();
 
     // Fetch orders to associate project titles & statuses
     let ordersMap: Record<string, any> = {};
@@ -1562,7 +1485,7 @@ app.get('/api/chat/conversations', async (req: Request, res: Response) => {
 
     const groups: Record<string, ChatMessageRecord[]> = {};
     for (const msg of allMessages) {
-      const key = (msg.orderCode || (msg.userId ? `client-${msg.userId}` : 'direct')).trim();
+      const key = msg.orderCode || 'RITM-GENERAL';
       if (!groups[key]) groups[key] = [];
       groups[key].push(msg);
     }
@@ -1574,7 +1497,7 @@ app.get('/api/chat/conversations', async (req: Request, res: Response) => {
 
       return {
         orderCode: code,
-        clientName: linkedOrder?.full_name || (last.senderRole === 'client' ? last.clientName : (msgs.find(m => m.senderRole === 'client')?.clientName || 'کارفرما')),
+        clientName: linkedOrder?.full_name || (last.senderRole === 'client' ? last.clientName : (msgs.find(m => m.senderRole === 'client')?.clientName || 'گفتگوی عمومی')),
         userId: linkedOrder?.user_id || last.userId,
         lastMessage: last.text,
         lastMessageTime: last.createdAt,

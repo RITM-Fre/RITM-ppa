@@ -55,27 +55,24 @@ export const Navbar: React.FC<NavbarProps> = ({
   }, []);
 
   return (
-    <>
-      <header
-        className={`fixed top-0 left-0 right-0 z-50 w-full transition-all duration-500 ease-out px-2.5 sm:px-6 pointer-events-none ${
-          scrolled ? 'pt-1.5 sm:pt-2 pb-1' : 'pt-2.5 sm:pt-4 pb-2'
+    <header
+      className={`sticky top-0 z-50 w-full transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] px-3 sm:px-6 ${
+        scrolled ? 'pt-2 pb-1' : 'pt-4 pb-3'
+      }`}
+    >
+      <div
+        className={`mx-auto transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] flex items-center justify-between ${
+          scrolled
+            ? 'max-w-5xl h-12 px-4 sm:px-5 rounded-2xl bg-[#0c0e17]/90 backdrop-blur-2xl border border-white/20 shadow-[0_16px_40px_rgba(0,0,0,0.7),inset_0_1px_1px_rgba(255,255,255,0.15)] scale-[0.99]'
+            : 'max-w-7xl h-16 px-4 sm:px-6 rounded-2xl bg-[#0e1017]/70 backdrop-blur-lg border border-white/[0.08] shadow-[0_4px_20px_rgba(0,0,0,0.3)] scale-100'
         }`}
       >
-        <div
-          className={`mx-auto transition-all duration-500 ease-out flex items-center justify-between pointer-events-auto ${
-            scrolled
-              ? 'max-w-6xl h-12 sm:h-13 px-3 sm:px-5 rounded-2xl bg-[#08090f]/95 backdrop-blur-2xl border border-white/20 shadow-[0_12px_36px_rgba(0,0,0,0.85),inset_0_1px_1px_rgba(255,255,255,0.18)] scale-[0.99]'
-              : 'max-w-7xl h-15 sm:h-16 px-3.5 sm:px-6 rounded-2xl bg-[#0e1017]/85 backdrop-blur-xl border border-white/10 shadow-[0_4px_24px_rgba(0,0,0,0.35)] scale-100'
-          }`}
-        >
         {/* Brand / Logo */}
         <div
           onClick={() => setActiveTab('home')}
-          className="flex items-center gap-2 cursor-pointer select-none group"
+          className="flex items-center gap-2.5 cursor-pointer select-none group"
         >
-          <div className={`relative rounded-xl overflow-hidden border border-white/20 bg-black/50 p-0.5 flex items-center justify-center transition-all duration-500 group-hover:scale-105 group-hover:border-[#d0bcff]/80 ${
-            scrolled ? 'w-6.5 h-6.5 sm:w-7.5 sm:h-7.5' : 'w-7.5 h-7.5 sm:w-8.5 sm:h-8.5'
-          }`}>
+          <div className="relative w-7 h-7 sm:w-8 sm:h-8 rounded-xl overflow-hidden border border-white/20 bg-black/50 p-0.5 flex items-center justify-center transition-transform duration-200 group-hover:scale-105 group-hover:border-[#d0bcff]/80">
             <img
               src={`${import.meta.env.BASE_URL}assets/logo.png`}
               alt="RITM"
@@ -85,9 +82,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
 
           <div className="flex items-center gap-1.5">
-            <span className={`font-extrabold tracking-tight text-white group-hover:text-[#d0bcff] transition-all duration-500 ${
-              scrolled ? 'text-xs sm:text-sm' : 'text-sm sm:text-base'
-            }`}>
+            <span className="text-sm sm:text-base font-extrabold tracking-tight text-white group-hover:text-[#d0bcff] transition-colors">
               {lang === 'fa' ? 'استودیو ریتم' : 'RITM Studio'}
             </span>
             <span className="w-1.5 h-1.5 rounded-full bg-[#a3e635] shadow-[0_0_8px_#a3e635]" />
@@ -195,25 +190,23 @@ export const Navbar: React.FC<NavbarProps> = ({
         </nav>
 
         {/* Right Minimal Actions */}
-        <div className="flex items-center gap-1.5 sm:gap-2">
+        <div className="flex items-center gap-2">
           {/* User state */}
           {currentUser ? (
             <button
               onClick={() => setActiveTab('client')}
-              className="flex items-center gap-1.5 px-2 sm:px-2.5 py-1.5 rounded-xl bg-white/[0.06] border border-[#d0bcff]/30 text-xs text-[#d0bcff] font-medium hover:bg-white/[0.1] transition-all cursor-pointer"
-              title="مشاهده حساب کاربری"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-white/[0.04] border border-white/10 text-xs text-[#d0bcff] font-medium hover:bg-white/[0.08] transition-colors"
             >
-              <User className="w-3.5 h-3.5" strokeWidth={2} />
-              <span className="max-w-[65px] sm:max-w-[90px] truncate text-[11px] sm:text-xs">{currentUser.first_name || currentUser.username}</span>
+              <User className="w-3.5 h-3.5" strokeWidth={1.75} />
+              <span className="max-w-[80px] truncate">{currentUser.username}</span>
             </button>
           ) : (
             <button
               onClick={() => setActiveTab('client')}
-              className="inline-flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] border border-white/10 text-xs text-white/90 hover:text-white transition-all cursor-pointer"
-              title="ورود به حساب کاربری با کد تایید"
+              className="hidden lg:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-xs text-white/90 hover:text-white transition-colors cursor-pointer"
             >
-              <User className="w-3.5 h-3.5 text-[#d0bcff]" strokeWidth={1.75} />
-              <span className="text-[11px] sm:text-xs font-medium">{lang === 'fa' ? 'ورود' : 'Login'}</span>
+              <User className="w-3.5 h-3.5" strokeWidth={1.75} />
+              <span>{lang === 'fa' ? 'ورود مشتری' : 'Client Login'}</span>
             </button>
           )}
 
@@ -231,7 +224,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           {/* Language Switcher */}
           <button
             onClick={() => setLang(lang === 'fa' ? 'en' : 'fa')}
-            className="flex items-center gap-1 px-2 sm:px-2.5 py-1.5 rounded-xl border border-white/10 hover:border-white/20 text-xs font-mono text-[#9da3af] hover:text-white transition-colors bg-white/[0.02] cursor-pointer"
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl border border-white/10 hover:border-white/20 text-xs font-mono text-[#9da3af] hover:text-white transition-colors bg-white/[0.02] cursor-pointer"
             title={lang === 'fa' ? 'تغییر زبان' : 'Switch Language'}
           >
             <Globe className="w-3.5 h-3.5" strokeWidth={1.75} />
@@ -243,7 +236,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             href="https://t.me/RITM_FreeLancer"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#229ed9]/90 to-[#0088cc]/90 hover:from-[#229ed9] hover:to-[#0088cc] border border-[#38bdf8]/30 text-white text-xs font-semibold shadow-[0_4px_16px_rgba(34,158,217,0.25)] hover:shadow-[0_4px_20px_rgba(34,158,217,0.4)] transition-all cursor-pointer whitespace-nowrap active:scale-95"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#229ed9]/90 to-[#0088cc]/90 hover:from-[#229ed9] hover:to-[#0088cc] border border-[#38bdf8]/30 text-white text-xs font-semibold shadow-[0_4px_16px_rgba(34,158,217,0.25)] hover:shadow-[0_4px_20px_rgba(34,158,217,0.4)] transition-all cursor-pointer whitespace-nowrap active:scale-95"
             title="کانال رسمی تلگرام استودیو ریتم"
           >
             <Send className="w-3.5 h-3.5" strokeWidth={1.75} />
@@ -251,84 +244,89 @@ export const Navbar: React.FC<NavbarProps> = ({
           </a>
         </div>
       </div>
-    </header>
 
-    {/* Mobile Floating Glass Bottom Dock (Fixed at bottom on phones, clean & thumb-accessible) */}
-    <div className="md:hidden fixed bottom-3 left-3 right-3 z-40 max-w-sm mx-auto rounded-2xl bg-[#0c0e17]/92 backdrop-blur-2xl border border-white/20 shadow-[0_12px_36px_rgba(0,0,0,0.8),inset_0_1px_0_rgba(255,255,255,0.15)] p-1.5 flex items-center justify-around text-xs">
-      <button
-        onClick={() => setActiveTab('home')}
-        className={`flex flex-col items-center gap-0.5 px-2.5 py-1 rounded-xl transition-all cursor-pointer ${
-          activeTab === 'home' ? 'text-[#d0bcff] font-bold' : 'text-[#9da3af] hover:text-white'
-        }`}
-      >
-        <Home className="w-4 h-4" strokeWidth={activeTab === 'home' ? 2.5 : 1.75} />
-        <span className="text-[10px]">{lang === 'fa' ? 'خانه' : 'Home'}</span>
-      </button>
-
-      <button
-        onClick={() => setActiveTab('order')}
-        className={`flex flex-col items-center gap-0.5 px-2.5 py-1 rounded-xl transition-all cursor-pointer ${
-          activeTab === 'order' ? 'text-[#d0bcff] font-bold' : 'text-[#9da3af] hover:text-white'
-        }`}
-      >
-        <ShoppingBag className="w-4 h-4" strokeWidth={activeTab === 'order' ? 2.5 : 1.75} />
-        <span className="text-[10px]">{lang === 'fa' ? 'سفارش' : 'Order'}</span>
-      </button>
-
-      <button
-        onClick={() => setActiveTab('portfolio')}
-        className={`flex flex-col items-center gap-0.5 px-2.5 py-1 rounded-xl transition-all cursor-pointer ${
-          activeTab === 'portfolio' ? 'text-[#d0bcff] font-bold' : 'text-[#9da3af] hover:text-white'
-        }`}
-      >
-        <FolderKanban className="w-4 h-4" strokeWidth={activeTab === 'portfolio' ? 2.5 : 1.75} />
-        <span className="text-[10px]">{lang === 'fa' ? 'نمونه‌ها' : 'Work'}</span>
-      </button>
-
-      <button
-        onClick={() => setActiveTab('client')}
-        className={`flex flex-col items-center gap-0.5 px-2.5 py-1 rounded-xl transition-all cursor-pointer ${
-          activeTab === 'client' ? 'text-[#adc6ff] font-bold' : 'text-[#9da3af] hover:text-white'
-        }`}
-      >
-        <Clock className="w-4 h-4" strokeWidth={activeTab === 'client' ? 2.5 : 1.75} />
-        <span className="text-[10px]">{lang === 'fa' ? 'پیگیری' : 'Track'}</span>
-      </button>
-
-      <button
-        onClick={() => setActiveTab('chat')}
-        className={`flex flex-col items-center gap-0.5 px-2.5 py-1 rounded-xl transition-all cursor-pointer ${
-          activeTab === 'chat' ? 'text-[#a3e635] font-bold' : 'text-[#9da3af] hover:text-white'
-        }`}
-      >
-        <div className="relative">
-          <MessageSquare className="w-4 h-4" strokeWidth={activeTab === 'chat' ? 2.5 : 1.75} />
-          <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-[#a3e635] animate-pulse" />
-        </div>
-        <span className="text-[10px]">{lang === 'fa' ? 'گفتگو' : 'Chat'}</span>
-      </button>
-
-      {isAdminLoggedIn ? (
+      {/* Mobile Floating Glass Dock */}
+      <div className="md:hidden mt-2 mx-auto max-w-sm rounded-2xl bg-[#0c0e17]/85 backdrop-blur-xl border border-white/15 shadow-[0_8px_24px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.1)] p-1 flex items-center justify-around text-xs">
         <button
-          onClick={() => setActiveTab('admin')}
-          className={`flex flex-col items-center gap-0.5 px-2 py-1 rounded-xl transition-all cursor-pointer ${
-            activeTab === 'admin' ? 'text-[#d0bcff] font-bold' : 'text-[#9da3af]'
+          onClick={() => setActiveTab('home')}
+          className={`flex items-center gap-1 px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
+            activeTab === 'home'
+              ? 'bg-white/15 text-white font-bold shadow-sm'
+              : 'text-[#9da3af] hover:text-white'
           }`}
         >
-          <Shield className="w-4 h-4" strokeWidth={1.75} />
-          <span className="text-[10px]">{lang === 'fa' ? 'ادمین' : 'Admin'}</span>
+          <Home className="w-3.5 h-3.5" strokeWidth={1.75} />
+          <span>{lang === 'fa' ? 'خانه' : 'Home'}</span>
         </button>
-      ) : (
+
         <button
-          onClick={onOpenAdminLogin}
-          className="flex flex-col items-center gap-0.5 p-1 rounded-xl text-[#9da3af] hover:text-white cursor-pointer"
-          title="ورود مدیریت"
+          onClick={() => setActiveTab('order')}
+          className={`flex items-center gap-1 px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
+            activeTab === 'order'
+              ? 'bg-[#d0bcff] text-[#0d0f17] font-bold shadow-sm'
+              : 'text-[#9da3af] hover:text-white'
+          }`}
         >
-          <Lock className="w-3.5 h-3.5 text-[#ffb869]" strokeWidth={1.75} />
-          <span className="text-[9px]">ورود</span>
+          <ShoppingBag className="w-3.5 h-3.5" strokeWidth={1.75} />
+          <span>{lang === 'fa' ? 'سفارش' : 'Order'}</span>
         </button>
-      )}
-    </div>
-  </>
-);
+
+        <button
+          onClick={() => setActiveTab('portfolio')}
+          className={`flex items-center gap-1 px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
+            activeTab === 'portfolio'
+              ? 'bg-white/15 text-white font-bold shadow-sm'
+              : 'text-[#9da3af] hover:text-white'
+          }`}
+        >
+          <FolderKanban className="w-3.5 h-3.5" strokeWidth={1.75} />
+          <span>{lang === 'fa' ? 'نمونه‌ها' : 'Work'}</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('client')}
+          className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl transition-all cursor-pointer ${
+            activeTab === 'client'
+              ? 'bg-white/15 text-white font-bold shadow-sm'
+              : 'text-[#9da3af] hover:text-white'
+          }`}
+        >
+          <Clock className="w-3.5 h-3.5" strokeWidth={1.75} />
+          <span>{lang === 'fa' ? 'پیگیری' : 'Track'}</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('chat')}
+          className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl transition-all cursor-pointer ${
+            activeTab === 'chat'
+              ? 'bg-[#a3e635]/20 text-[#a3e635] font-bold shadow-sm border border-[#a3e635]/30'
+              : 'text-[#9da3af] hover:text-white'
+          }`}
+        >
+          <MessageSquare className="w-3.5 h-3.5 text-[#a3e635]" strokeWidth={1.75} />
+          <span>{lang === 'fa' ? 'گفتگو' : 'Chat'}</span>
+        </button>
+
+        {isAdminLoggedIn ? (
+          <button
+            onClick={() => setActiveTab('admin')}
+            className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl transition-all cursor-pointer ${
+              activeTab === 'admin' ? 'text-[#d0bcff] font-bold' : 'text-[#9da3af]'
+            }`}
+          >
+            <Shield className="w-3.5 h-3.5" strokeWidth={1.75} />
+            <span className="w-1.5 h-1.5 rounded-full bg-[#a3e635]" />
+          </button>
+        ) : (
+          <button
+            onClick={onOpenAdminLogin}
+            className="p-1.5 rounded-xl text-[#9da3af] hover:text-white cursor-pointer"
+            title="ورود مدیریت"
+          >
+            <Lock className="w-3.5 h-3.5 text-[#ffb869]" strokeWidth={1.75} />
+          </button>
+        )}
+      </div>
+    </header>
+  );
 };
