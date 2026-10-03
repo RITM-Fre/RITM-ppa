@@ -1,54 +1,39 @@
 @import "tailwindcss";
 
-/* IRANSans Persian Font Definition & Fallback */
+/* 1. Local & Web-safe Persian Font Definitions */
 @font-face {
-  font-family: 'IRANSans';
-  font-style: normal;
-  font-weight: 300;
-  src: local('IRANSans Light'), local('IRANSans-Light'),
-       url('https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/fonts/webfonts/Vazirmatn-Light.woff2') format('woff2');
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'IRANSans';
-  font-style: normal;
-  font-weight: 400;
-  src: local('IRANSans'), local('IRANSans-Regular'),
-       url('https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/fonts/webfonts/Vazirmatn-Regular.woff2') format('woff2');
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'IRANSans';
-  font-style: normal;
-  font-weight: 500;
-  src: local('IRANSans Medium'), local('IRANSans-Medium'),
-       url('https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/fonts/webfonts/Vazirmatn-Medium.woff2') format('woff2');
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'IRANSans';
-  font-style: normal;
+  font-family: 'Mitra';
+  src: local('B Mitra'), local('BMitra'), local('Mitra'),
+       url('./fonts/mitra-bold.ttf') format('truetype'),
+       url('/fonts/mitra-bold.ttf') format('truetype');
   font-weight: 700;
-  src: local('IRANSans Bold'), local('IRANSans-Bold'),
-       url('https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/fonts/webfonts/Vazirmatn-Bold.woff2') format('woff2');
+  font-style: normal;
   font-display: swap;
 }
 
 @font-face {
-  font-family: 'IRANSans';
+  font-family: 'Vazirmatn';
+  src: local('Vazirmatn'), local('Vazir'),
+       url('./fonts/vazirmatn-regular.woff2') format('woff2'),
+       url('/fonts/vazirmatn-regular.woff2') format('woff2');
+  font-weight: 400;
   font-style: normal;
-  font-weight: 800;
-  src: local('IRANSans Black'), local('IRANSans-Black'),
-       url('https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/fonts/webfonts/Vazirmatn-ExtraBold.woff2') format('woff2');
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Vazirmatn';
+  src: local('Vazirmatn Bold'), local('Vazir Bold'),
+       url('./fonts/vazirmatn-bold.woff2') format('woff2'),
+       url('/fonts/vazirmatn-bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
   font-display: swap;
 }
 
 @layer base {
   html, body, button, input, textarea, select {
-    font-family: 'IRANSans', 'IRANSansX', 'Vazirmatn', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+    font-family: 'Vazirmatn', 'Mitra', 'B Mitra', 'IRANSans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Tahoma, Arial, sans-serif !important;
   }
 
   body {
@@ -62,24 +47,48 @@
   }
 }
 
-/* Crisp, fast glass cards without browser GPU lag */
+/* 2. Glassmorphism Panels & Island Header */
 .glass-panel {
-  background-color: #12141c;
+  background-color: rgba(18, 20, 28, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .glass-card {
   background-color: #161823;
   border: 1px solid rgba(255, 255, 255, 0.08);
-  transition: border-color 0.15s ease, background-color 0.15s ease;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .glass-card:hover {
   background-color: #1c1f2e;
   border-color: rgba(208, 188, 255, 0.35);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px -10px rgba(0, 0, 0, 0.5);
 }
 
-/* Fast modern scrollbar */
+/* Island capsule styles */
+.island-glass,
+.island-capsule {
+  background: rgba(14, 16, 23, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.island-glass-active,
+.island-capsule-scrolled {
+  background: rgba(10, 11, 16, 0.95);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(208, 188, 255, 0.25);
+  box-shadow: 0 12px 36px 0 rgba(0, 0, 0, 0.7);
+}
+
+/* 3. Fast modern scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -93,4 +102,14 @@
 }
 ::-webkit-scrollbar-thumb:hover {
   background: #373d59;
+}
+
+/* 4. Subtle smooth pulse and glow animations */
+@keyframes glow-pulse {
+  0%, 100% { opacity: 0.8; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.05); }
+}
+
+.animate-glow-pulse {
+  animation: glow-pulse 3s infinite ease-in-out;
 }

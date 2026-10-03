@@ -4,14 +4,12 @@ import {
   ShoppingBag,
   FolderKanban,
   Clock,
-  Send,
   Globe,
   Shield,
   Terminal,
   LogOut,
   User,
-  Lock,
-  MessageSquare,
+  KeyRound,
 } from 'lucide-react';
 import { AuthUser } from '../types';
 
@@ -42,7 +40,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   useEffect(() => {
     const handleScroll = () => {
-      if (window.scrollY > 15) {
+      if (window.scrollY > 20) {
         setScrolled(true);
       } else {
         setScrolled(false);
@@ -55,278 +53,244 @@ export const Navbar: React.FC<NavbarProps> = ({
   }, []);
 
   return (
-    <header
-      className={`sticky top-0 z-50 w-full transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] px-3 sm:px-6 ${
-        scrolled ? 'pt-2 pb-1' : 'pt-4 pb-3'
-      }`}
-    >
-      <div
-        className={`mx-auto transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] flex items-center justify-between ${
-          scrolled
-            ? 'max-w-5xl h-12 px-4 sm:px-5 rounded-2xl bg-[#0c0e17]/90 backdrop-blur-2xl border border-white/20 shadow-[0_16px_40px_rgba(0,0,0,0.7),inset_0_1px_1px_rgba(255,255,255,0.15)] scale-[0.99]'
-            : 'max-w-7xl h-16 px-4 sm:px-6 rounded-2xl bg-[#0e1017]/70 backdrop-blur-lg border border-white/[0.08] shadow-[0_4px_20px_rgba(0,0,0,0.3)] scale-100'
+    <>
+      {/* 3-PIECE FLOATING ISLAND HEADER */}
+      <header
+        className={`fixed top-0 left-0 right-0 z-50 w-full transition-all duration-300 ease-out px-3 sm:px-6 pointer-events-none ${
+          scrolled ? 'pt-2 pb-1' : 'pt-3.5 sm:pt-4 pb-2'
         }`}
       >
-        {/* Brand / Logo */}
-        <div
-          onClick={() => setActiveTab('home')}
-          className="flex items-center gap-2.5 cursor-pointer select-none group"
-        >
-          <div className="relative w-7 h-7 sm:w-8 sm:h-8 rounded-xl overflow-hidden border border-white/20 bg-black/50 p-0.5 flex items-center justify-center transition-transform duration-200 group-hover:scale-105 group-hover:border-[#d0bcff]/80">
-            <img
-              src={`${import.meta.env.BASE_URL}assets/logo.png`}
-              alt="RITM"
-              className="w-full h-full object-contain"
-            />
-            <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-          </div>
-
-          <div className="flex items-center gap-1.5">
-            <span className="text-sm sm:text-base font-extrabold tracking-tight text-white group-hover:text-[#d0bcff] transition-colors">
-              {lang === 'fa' ? 'استودیو ریتم' : 'RITM Studio'}
-            </span>
-            <span className="w-1.5 h-1.5 rounded-full bg-[#a3e635] shadow-[0_0_8px_#a3e635]" />
-          </div>
-        </div>
-
-        {/* Center Minimal Navigation (Desktop) */}
-        <nav className="hidden md:flex items-center gap-1 p-1 rounded-xl bg-white/[0.03] border border-white/[0.06] backdrop-blur-md">
-          {/* Home */}
-          <button
+        <div className="max-w-6xl mx-auto flex items-center justify-between gap-2.5 sm:gap-3">
+          {/* ======================================================== */}
+          {/* ISLAND 1: BRAND CAPSULE (Right in RTL) */}
+          {/* ======================================================== */}
+          <div
             onClick={() => setActiveTab('home')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 cursor-pointer ${
-              activeTab === 'home'
-                ? 'bg-white/15 text-white font-semibold shadow-[0_2px_8px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.15)]'
-                : 'text-[#9da3af] hover:text-white hover:bg-white/[0.05]'
+            className={`island-glass rounded-full flex items-center gap-2 cursor-pointer select-none group pointer-events-auto transition-all duration-300 shadow-lg ${
+              scrolled
+                ? 'h-11 px-3 sm:px-4 scale-95'
+                : 'h-13 px-3.5 sm:px-4.5 scale-100'
             }`}
           >
-            <Home className="w-3.5 h-3.5" strokeWidth={1.75} />
-            <span>{lang === 'fa' ? 'خانه' : 'Home'}</span>
-          </button>
+            <div className="relative w-6 h-6 sm:w-7 sm:h-7 rounded-full overflow-hidden bg-black/40 border border-white/20 p-0.5 flex items-center justify-center transition-transform duration-300 group-hover:scale-110">
+              <img
+                src={`${import.meta.env.BASE_URL}assets/logo.png`}
+                alt="RITM"
+                className="w-full h-full object-contain"
+              />
+            </div>
 
-          {/* Order Project */}
-          <button
-            onClick={() => setActiveTab('order')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 cursor-pointer ${
-              activeTab === 'order'
-                ? 'bg-[#d0bcff] text-[#0d0f17] font-bold shadow-[0_0_16px_rgba(208,188,255,0.35)]'
-                : 'text-[#9da3af] hover:text-white hover:bg-white/[0.05]'
+            <div className="flex items-center gap-1.5">
+              <span className="text-sm sm:text-base font-extrabold tracking-tight text-white group-hover:text-[#d0bcff] transition-colors">
+                {lang === 'fa' ? 'ریتم' : 'RITM'}
+              </span>
+              <span className="w-1.5 h-1.5 rounded-full bg-[#a3e635] shadow-[0_0_8px_#a3e635]" />
+            </div>
+          </div>
+
+          {/* ======================================================== */}
+          {/* ISLAND 2: NAVIGATION CAPSULE (Center - Desktop only) */}
+          {/* ======================================================== */}
+          <nav
+            className={`hidden md:flex items-center gap-1 island-glass rounded-full p-1 pointer-events-auto transition-all duration-300 shadow-lg ${
+              scrolled ? 'h-11 px-1.5 scale-95' : 'h-13 px-2 scale-100'
             }`}
           >
-            <ShoppingBag className="w-3.5 h-3.5" strokeWidth={1.75} />
-            <span>{lang === 'fa' ? 'ثبت سفارش' : 'Order'}</span>
-          </button>
+            {/* Home */}
+            <button
+              onClick={() => setActiveTab('home')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 cursor-pointer ${
+                activeTab === 'home'
+                  ? 'bg-white/15 text-white font-bold shadow-sm'
+                  : 'text-[#9da3af] hover:text-white hover:bg-white/[0.06]'
+              }`}
+            >
+              <Home className="w-3.5 h-3.5" strokeWidth={activeTab === 'home' ? 2.2 : 1.75} />
+              <span>{lang === 'fa' ? 'خانه' : 'Home'}</span>
+            </button>
 
-          {/* Portfolio */}
-          <button
-            onClick={() => setActiveTab('portfolio')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 cursor-pointer ${
-              activeTab === 'portfolio'
-                ? 'bg-white/15 text-white font-semibold shadow-[0_2px_8px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.15)]'
-                : 'text-[#9da3af] hover:text-white hover:bg-white/[0.05]'
-            }`}
-          >
-            <FolderKanban className="w-3.5 h-3.5" strokeWidth={1.75} />
-            <span>{lang === 'fa' ? 'نمونه‌کارها' : 'Portfolio'}</span>
-          </button>
+            {/* Order */}
+            <button
+              onClick={() => setActiveTab('order')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all duration-200 cursor-pointer ${
+                activeTab === 'order'
+                  ? 'bg-[#d0bcff] text-[#0d0f17] shadow-[0_0_16px_rgba(208,188,255,0.4)]'
+                  : 'text-[#9da3af] hover:text-white hover:bg-white/[0.06]'
+              }`}
+            >
+              <ShoppingBag className="w-3.5 h-3.5" strokeWidth={activeTab === 'order' ? 2.2 : 1.75} />
+              <span>{lang === 'fa' ? 'ثبت سفارش' : 'Order'}</span>
+            </button>
 
-          {/* Tracking */}
-          <button
-            onClick={() => setActiveTab('client')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 cursor-pointer ${
-              activeTab === 'client'
-                ? 'bg-white/15 text-white font-semibold shadow-[0_2px_8px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.15)]'
-                : 'text-[#9da3af] hover:text-white hover:bg-white/[0.05]'
-            }`}
-          >
-            <Clock className="w-3.5 h-3.5 text-[#adc6ff]" strokeWidth={1.75} />
-            <span>{lang === 'fa' ? 'پیگیری سفارش' : 'Track'}</span>
-          </button>
+            {/* Portfolio */}
+            <button
+              onClick={() => setActiveTab('portfolio')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 cursor-pointer ${
+                activeTab === 'portfolio'
+                  ? 'bg-white/15 text-white font-bold shadow-sm'
+                  : 'text-[#9da3af] hover:text-white hover:bg-white/[0.06]'
+              }`}
+            >
+              <FolderKanban className="w-3.5 h-3.5" strokeWidth={activeTab === 'portfolio' ? 2.2 : 1.75} />
+              <span>{lang === 'fa' ? 'نمونه‌کارها' : 'Work'}</span>
+            </button>
 
-          {/* Online Project Discussion */}
-          <button
-            onClick={() => setActiveTab('chat')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 cursor-pointer ${
-              activeTab === 'chat'
-                ? 'bg-[#a3e635]/20 text-[#a3e635] font-bold border border-[#a3e635]/40 shadow-[0_0_12px_rgba(163,230,53,0.2)]'
-                : 'text-[#9da3af] hover:text-[#a3e635] hover:bg-white/[0.05]'
-            }`}
-          >
-            <MessageSquare className="w-3.5 h-3.5 text-[#a3e635]" strokeWidth={1.75} />
-            <span>{lang === 'fa' ? 'گفتگوی آنلاین' : 'Live Chat'}</span>
-            <span className="w-1.5 h-1.5 rounded-full bg-[#a3e635] animate-pulse" />
-          </button>
-
-          {/* Admin Tabs (Only if logged in) */}
-          {isAdminLoggedIn && (
-            <>
-              <div className="h-3.5 w-[1px] bg-white/15 mx-1" />
-              <button
-                onClick={() => setActiveTab('admin')}
-                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
-                  activeTab === 'admin'
-                    ? 'bg-[#d0bcff]/20 text-[#d0bcff] font-bold border border-[#d0bcff]/40'
-                    : 'text-[#d0bcff]/80 hover:text-[#d0bcff] hover:bg-white/5'
-                }`}
-              >
-                <Shield className="w-3.5 h-3.5" strokeWidth={1.75} />
-                <span>{lang === 'fa' ? 'ادمین' : 'Admin'}</span>
-                {pendingCount > 0 && <span className="w-1.5 h-1.5 rounded-full bg-[#ffb869] animate-pulse" />}
-              </button>
-
-              <button
-                onClick={() => setActiveTab('status')}
-                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
-                  activeTab === 'status'
-                    ? 'bg-white/15 text-white font-bold'
-                    : 'text-[#9da3af] hover:text-white hover:bg-white/5'
-                }`}
-              >
-                <Terminal className="w-3.5 h-3.5 text-[#adc6ff]" strokeWidth={1.75} />
-                <span>{lang === 'fa' ? 'لاگ‌ها' : 'Logs'}</span>
-              </button>
-            </>
-          )}
-        </nav>
-
-        {/* Right Minimal Actions */}
-        <div className="flex items-center gap-2">
-          {/* User state */}
-          {currentUser ? (
+            {/* Tracking */}
             <button
               onClick={() => setActiveTab('client')}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-white/[0.04] border border-white/10 text-xs text-[#d0bcff] font-medium hover:bg-white/[0.08] transition-colors"
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 cursor-pointer ${
+                activeTab === 'client'
+                  ? 'bg-[#adc6ff]/20 text-[#adc6ff] border border-[#adc6ff]/40 font-bold shadow-sm'
+                  : 'text-[#9da3af] hover:text-white hover:bg-white/[0.06]'
+              }`}
             >
-              <User className="w-3.5 h-3.5" strokeWidth={1.75} />
-              <span className="max-w-[80px] truncate">{currentUser.username}</span>
+              <Clock className="w-3.5 h-3.5 text-[#adc6ff]" strokeWidth={activeTab === 'client' ? 2.2 : 1.75} />
+              <span>{lang === 'fa' ? 'پیگیری سفارش' : 'Track'}</span>
             </button>
-          ) : (
-            <button
-              onClick={() => setActiveTab('client')}
-              className="hidden lg:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-xs text-white/90 hover:text-white transition-colors cursor-pointer"
-            >
-              <User className="w-3.5 h-3.5" strokeWidth={1.75} />
-              <span>{lang === 'fa' ? 'ورود مشتری' : 'Client Login'}</span>
-            </button>
-          )}
 
-          {isAdminLoggedIn && (
-            <button
-              onClick={onAdminLogout}
-              className="p-1.5 px-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/25 text-xs flex items-center gap-1 transition-colors cursor-pointer"
-              title="خروج ادمین"
-            >
-              <LogOut className="w-3.5 h-3.5" strokeWidth={1.75} />
-              <span className="hidden xl:inline text-[11px]">{lang === 'fa' ? 'خروج' : 'Logout'}</span>
-            </button>
-          )}
+            {/* Admin Tabs (Only if logged in) */}
+            {isAdminLoggedIn && (
+              <>
+                <div className="h-4 w-[1px] bg-white/15 mx-1" />
+                <button
+                  onClick={() => setActiveTab('admin')}
+                  className={`flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                    activeTab === 'admin'
+                      ? 'bg-[#d0bcff]/20 text-[#d0bcff] border border-[#d0bcff]/40'
+                      : 'text-[#d0bcff]/80 hover:text-[#d0bcff] hover:bg-white/5'
+                  }`}
+                >
+                  <Shield className="w-3.5 h-3.5" strokeWidth={2} />
+                  <span>{lang === 'fa' ? 'ادمین' : 'Admin'}</span>
+                  {pendingCount > 0 && <span className="w-1.5 h-1.5 rounded-full bg-[#ffb869] animate-pulse" />}
+                </button>
 
-          {/* Language Switcher */}
-          <button
-            onClick={() => setLang(lang === 'fa' ? 'en' : 'fa')}
-            className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl border border-white/10 hover:border-white/20 text-xs font-mono text-[#9da3af] hover:text-white transition-colors bg-white/[0.02] cursor-pointer"
-            title={lang === 'fa' ? 'تغییر زبان' : 'Switch Language'}
+                <button
+                  onClick={() => setActiveTab('status')}
+                  className={`flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer ${
+                    activeTab === 'status'
+                      ? 'bg-white/15 text-white font-bold'
+                      : 'text-[#9da3af] hover:text-white hover:bg-white/5'
+                  }`}
+                >
+                  <Terminal className="w-3.5 h-3.5 text-[#adc6ff]" strokeWidth={1.75} />
+                  <span>{lang === 'fa' ? 'لاگ‌ها' : 'Logs'}</span>
+                </button>
+              </>
+            )}
+          </nav>
+
+          {/* ======================================================== */}
+          {/* ISLAND 3: ACTION CAPSULE (Left in RTL - User & Lang) */}
+          {/* ======================================================== */}
+          <div
+            className={`island-glass rounded-full flex items-center gap-1.5 sm:gap-2 pointer-events-auto transition-all duration-300 shadow-lg ${
+              scrolled ? 'h-11 px-2 sm:px-3 scale-95' : 'h-13 px-2.5 sm:px-3.5 scale-100'
+            }`}
           >
-            <Globe className="w-3.5 h-3.5" strokeWidth={1.75} />
-            <span>{lang === 'fa' ? 'EN' : 'فا'}</span>
-          </button>
+            {/* User State */}
+            {currentUser ? (
+              <button
+                onClick={() => setActiveTab('client')}
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/[0.08] hover:bg-white/[0.14] border border-[#d0bcff]/40 text-xs text-[#d0bcff] font-medium transition-all cursor-pointer"
+                title="پرتال مشتریان"
+              >
+                <User className="w-3.5 h-3.5" strokeWidth={2} />
+                <span className="max-w-[70px] sm:max-w-[90px] truncate text-[11px] sm:text-xs">
+                  {currentUser.first_name || currentUser.username}
+                </span>
+              </button>
+            ) : (
+              <button
+                onClick={() => setActiveTab('client')}
+                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#d0bcff]/15 hover:bg-[#d0bcff]/25 border border-[#d0bcff]/30 text-xs text-[#d0bcff] font-bold transition-all cursor-pointer"
+                title="ورود به حساب کاربری مشتریان"
+              >
+                <KeyRound className="w-3.5 h-3.5" strokeWidth={2} />
+                <span className="text-[11px] sm:text-xs">{lang === 'fa' ? 'ورود' : 'Login'}</span>
+              </button>
+            )}
 
-          {/* Telegram Glass Button (Channel link) */}
-          <a
-            href="https://t.me/RITM_FreeLancer"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#229ed9]/90 to-[#0088cc]/90 hover:from-[#229ed9] hover:to-[#0088cc] border border-[#38bdf8]/30 text-white text-xs font-semibold shadow-[0_4px_16px_rgba(34,158,217,0.25)] hover:shadow-[0_4px_20px_rgba(34,158,217,0.4)] transition-all cursor-pointer whitespace-nowrap active:scale-95"
-            title="کانال رسمی تلگرام استودیو ریتم"
-          >
-            <Send className="w-3.5 h-3.5" strokeWidth={1.75} />
-            <span className="hidden sm:inline">{lang === 'fa' ? 'کانال تلگرام' : 'Channel'}</span>
-          </a>
+            {/* Admin Logout Button */}
+            {isAdminLoggedIn && (
+              <button
+                onClick={onAdminLogout}
+                className="p-1.5 rounded-full bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 text-xs flex items-center transition-colors cursor-pointer"
+                title="خروج از حساب ادمین"
+              >
+                <LogOut className="w-3.5 h-3.5" strokeWidth={1.75} />
+              </button>
+            )}
+
+            {/* Language Switcher */}
+            <button
+              onClick={() => setLang(lang === 'fa' ? 'en' : 'fa')}
+              className="flex items-center gap-1 px-2.5 py-1 rounded-full border border-white/10 hover:border-white/20 text-xs font-mono text-[#9da3af] hover:text-white transition-colors bg-white/[0.03] cursor-pointer"
+              title={lang === 'fa' ? 'تغییر زبان به انگلیسی' : 'Switch Language to Persian'}
+            >
+              <Globe className="w-3.5 h-3.5" strokeWidth={1.75} />
+              <span>{lang === 'fa' ? 'EN' : 'فا'}</span>
+            </button>
+          </div>
         </div>
-      </div>
+      </header>
 
-      {/* Mobile Floating Glass Dock */}
-      <div className="md:hidden mt-2 mx-auto max-w-sm rounded-2xl bg-[#0c0e17]/85 backdrop-blur-xl border border-white/15 shadow-[0_8px_24px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.1)] p-1 flex items-center justify-around text-xs">
+      {/* ======================================================== */}
+      {/* MOBILE FLOATING BOTTOM DOCK (Thumb-accessible, clean) */}
+      {/* ======================================================== */}
+      <div className="md:hidden fixed bottom-3 left-3 right-3 z-40 max-w-sm mx-auto rounded-full island-glass-active p-1.5 flex items-center justify-around text-xs shadow-2xl">
         <button
           onClick={() => setActiveTab('home')}
-          className={`flex items-center gap-1 px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
-            activeTab === 'home'
-              ? 'bg-white/15 text-white font-bold shadow-sm'
-              : 'text-[#9da3af] hover:text-white'
+          className={`flex flex-col items-center gap-0.5 px-3 py-1 rounded-full transition-all cursor-pointer ${
+            activeTab === 'home' ? 'text-[#d0bcff] font-bold' : 'text-[#9da3af] hover:text-white'
           }`}
         >
-          <Home className="w-3.5 h-3.5" strokeWidth={1.75} />
-          <span>{lang === 'fa' ? 'خانه' : 'Home'}</span>
+          <Home className="w-4 h-4" strokeWidth={activeTab === 'home' ? 2.5 : 1.75} />
+          <span className="text-[10px]">{lang === 'fa' ? 'خانه' : 'Home'}</span>
         </button>
 
         <button
           onClick={() => setActiveTab('order')}
-          className={`flex items-center gap-1 px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
-            activeTab === 'order'
-              ? 'bg-[#d0bcff] text-[#0d0f17] font-bold shadow-sm'
-              : 'text-[#9da3af] hover:text-white'
+          className={`flex flex-col items-center gap-0.5 px-3 py-1 rounded-full transition-all cursor-pointer ${
+            activeTab === 'order' ? 'text-[#d0bcff] font-bold' : 'text-[#9da3af] hover:text-white'
           }`}
         >
-          <ShoppingBag className="w-3.5 h-3.5" strokeWidth={1.75} />
-          <span>{lang === 'fa' ? 'سفارش' : 'Order'}</span>
+          <ShoppingBag className="w-4 h-4" strokeWidth={activeTab === 'order' ? 2.5 : 1.75} />
+          <span className="text-[10px]">{lang === 'fa' ? 'سفارش' : 'Order'}</span>
         </button>
 
         <button
           onClick={() => setActiveTab('portfolio')}
-          className={`flex items-center gap-1 px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
-            activeTab === 'portfolio'
-              ? 'bg-white/15 text-white font-bold shadow-sm'
-              : 'text-[#9da3af] hover:text-white'
+          className={`flex flex-col items-center gap-0.5 px-3 py-1 rounded-full transition-all cursor-pointer ${
+            activeTab === 'portfolio' ? 'text-[#d0bcff] font-bold' : 'text-[#9da3af] hover:text-white'
           }`}
         >
-          <FolderKanban className="w-3.5 h-3.5" strokeWidth={1.75} />
-          <span>{lang === 'fa' ? 'نمونه‌ها' : 'Work'}</span>
+          <FolderKanban className="w-4 h-4" strokeWidth={activeTab === 'portfolio' ? 2.5 : 1.75} />
+          <span className="text-[10px]">{lang === 'fa' ? 'نمونه‌ها' : 'Work'}</span>
         </button>
 
         <button
           onClick={() => setActiveTab('client')}
-          className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl transition-all cursor-pointer ${
-            activeTab === 'client'
-              ? 'bg-white/15 text-white font-bold shadow-sm'
-              : 'text-[#9da3af] hover:text-white'
+          className={`flex flex-col items-center gap-0.5 px-3 py-1 rounded-full transition-all cursor-pointer ${
+            activeTab === 'client' ? 'text-[#adc6ff] font-bold' : 'text-[#9da3af] hover:text-white'
           }`}
         >
-          <Clock className="w-3.5 h-3.5" strokeWidth={1.75} />
-          <span>{lang === 'fa' ? 'پیگیری' : 'Track'}</span>
+          <Clock className="w-4 h-4" strokeWidth={activeTab === 'client' ? 2.5 : 1.75} />
+          <span className="text-[10px]">{lang === 'fa' ? 'پیگیری' : 'Track'}</span>
         </button>
 
-        <button
-          onClick={() => setActiveTab('chat')}
-          className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl transition-all cursor-pointer ${
-            activeTab === 'chat'
-              ? 'bg-[#a3e635]/20 text-[#a3e635] font-bold shadow-sm border border-[#a3e635]/30'
-              : 'text-[#9da3af] hover:text-white'
-          }`}
-        >
-          <MessageSquare className="w-3.5 h-3.5 text-[#a3e635]" strokeWidth={1.75} />
-          <span>{lang === 'fa' ? 'گفتگو' : 'Chat'}</span>
-        </button>
-
-        {isAdminLoggedIn ? (
+        {isAdminLoggedIn && (
           <button
             onClick={() => setActiveTab('admin')}
-            className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl transition-all cursor-pointer ${
+            className={`flex flex-col items-center gap-0.5 px-3 py-1 rounded-full transition-all cursor-pointer ${
               activeTab === 'admin' ? 'text-[#d0bcff] font-bold' : 'text-[#9da3af]'
             }`}
           >
-            <Shield className="w-3.5 h-3.5" strokeWidth={1.75} />
-            <span className="w-1.5 h-1.5 rounded-full bg-[#a3e635]" />
-          </button>
-        ) : (
-          <button
-            onClick={onOpenAdminLogin}
-            className="p-1.5 rounded-xl text-[#9da3af] hover:text-white cursor-pointer"
-            title="ورود مدیریت"
-          >
-            <Lock className="w-3.5 h-3.5 text-[#ffb869]" strokeWidth={1.75} />
+            <Shield className="w-4 h-4" strokeWidth={2} />
+            <span className="text-[10px]">{lang === 'fa' ? 'ادمین' : 'Admin'}</span>
           </button>
         )}
       </div>
-    </header>
+    </>
   );
 };

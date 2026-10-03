@@ -108,7 +108,7 @@ export const ProjectContractModal: React.FC<ProjectContractModalProps> = ({
               </div>
               <div>
                 <h1 className="text-xl sm:text-2xl font-black text-white">
-                  {lang === 'fa' ? 'استودیو دیجیتال ریتم (RITM Studio)' : 'RITM Creative Digital Agency'}
+                  {lang === 'fa' ? 'ریتم — آژانس خلاقیت دیجیتال' : 'RITM Creative Digital Agency'}
                 </h1>
                 <p className="text-xs text-[#8c94a4]">
                   {lang === 'fa' ? 'تخصصی‌ترین مرجع تدوین ویدیو، پریمیر پرو و مهندسی نرم‌افزار' : 'High-End Video Editing, Premiere Pro & Digital Systems'}
@@ -142,7 +142,7 @@ export const ProjectContractModal: React.FC<ProjectContractModalProps> = ({
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs bg-white/[0.02] p-4 rounded-2xl border border-white/10">
               <div>
                 <span className="text-[#8c94a4] block mb-1">مجری پروژه:</span>
-                <span className="text-white font-semibold">استودیو ریتم (مدیریت فنی)</span>
+                <span className="text-white font-semibold">ریتم (مدیریت فنی)</span>
               </div>
               <div>
                 <span className="text-[#8c94a4] block mb-1">کارفرما (سفارش‌دهنده):</span>
@@ -204,19 +204,19 @@ export const ProjectContractModal: React.FC<ProjectContractModalProps> = ({
 
             <div className="bg-white/[0.02] border border-white/10 rounded-2xl p-5 text-xs text-[#b8b3c4] space-y-3 leading-relaxed">
               <p>
-                <strong className="text-white">ماده ۱ – موضوع قرارداد:</strong> ارائه خدمات حرفه‌ای تدوین، طراحی بصری یا مهندسی نرم‌افزار به شرح مشخصات مندرج در جدول فوق توسط استودیو ریتم برای کارفرما.
+                <strong className="text-white">ماده ۱ – موضوع قرارداد:</strong> ارائه خدمات حرفه‌ای تدوین، طراحی بصری یا مهندسی نرم‌افزار به شرح مشخصات مندرج در جدول فوق توسط ریتم برای کارفرما.
               </p>
               <p>
-                <strong className="text-white">ماده ۲ – تعهدات مجری (استودیو ریتم):</strong> مجری متعهد می‌گردد پروژه را با استانداردهای سینمایی (خروجی تا 4K، تصحیح رنگ و نور Lumetri Color و بهینه‌سازی صدا) در مهلت مقرر تحویل نماید. همچنین پس از تحویل نسخه اولیه، ۲ مرحله اصلاحات و بازبینی رایگان بر اساس درخواست کارفرما اعمال خواهد شد.
+                <strong className="text-white">ماده ۲ – تعهدات مجری (ریتم):</strong> مجری متعهد می‌گردد پروژه را با استانداردهای سینمایی (خروجی تا 4K، تصحیح رنگ و نور Lumetri Color و بهینه‌سازی صدا) در مهلت مقرر تحویل نماید. همچنین پس از تحویل نسخه اولیه، ۲ مرحله اصلاحات و بازبینی رایگان بر اساس درخواست کارفرما اعمال خواهد شد.
               </p>
               <p>
                 <strong className="text-white">ماده ۳ – محرمانگی و امنیت فایل‌ها (NDA):</strong> تمامی فایل‌های ارسالی، فیلم‌های خام، متون و ایده‌های کارفرما به عنوان اسرار تجاری تلقی شده و تحت هیچ شرایطی در اختیار اشخاص ثالث قرار نخواهد گرفت.
               </p>
               <p>
-                <strong className="text-white">ماده ۴ – تعهدات کارفرما:</strong> کارفرما متعهد می‌گردد راش‌ها، لوگوها و فایل‌های تکمیلی لازم را در ابتدای پروژه در اختیار استودیو قرار داده و تاییدات نهایی را به موقع اعلام فرماید.
+                <strong className="text-white">ماده ۴ – تعهدات کارفرما:</strong> کارفرما متعهد می‌گردد راش‌ها، لوگوها و فایل‌های تکمیلی لازم را در ابتدای پروژه در اختیار ریتم قرار داده و تاییدات نهایی را به موقع اعلام فرماید.
               </p>
               <p>
-                <strong className="text-white">ماده ۵ – حق مالکیت مادی و معنوی:</strong> پس از تسویه‌حساب نهایی، مالکیت کامل مادی اثر متعلق به کارفرما بوده و استودیو حق انتشار آن را صرفاً به عنوان نمونه‌کار در پورتفولیوی رسمی خود خواهد داشت.
+                <strong className="text-white">ماده ۵ – حق مالکیت مادی و معنوی:</strong> پس از تسویه‌حساب نهایی، مالکیت کامل مادی اثر متعلق به کارفرما بوده و ریتم حق انتشار آن را صرفاً به عنوان نمونه‌کار در پورتفولیوی رسمی خود خواهد داشت.
               </p>
             </div>
           </div>
@@ -227,7 +227,7 @@ export const ProjectContractModal: React.FC<ProjectContractModalProps> = ({
             <div className="bg-white/[0.02] border border-[#d0bcff]/30 rounded-2xl p-5 relative overflow-hidden flex flex-col justify-between">
               <div>
                 <span className="text-xs text-[#8c94a4] block mb-1">تاییدیه و امضای مجری:</span>
-                <span className="text-sm font-bold text-white block">استودیو خلاق دیجیتال ریتم</span>
+                <span className="text-sm font-bold text-white block">ریتم — خلاقیت دیجیتال</span>
                 <span className="text-xs text-[#d0bcff] font-mono block mt-1">مدیریت پروژه‌ها</span>
                 <span className="text-xs text-[#8c94a4] font-mono block mt-0.5 flex items-center gap-1">
                   <Mail className="w-3 h-3 text-[#d0bcff]" />

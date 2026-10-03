@@ -300,7 +300,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ lang, onLogout, onNaviga
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {onLogout && (
             <button
               onClick={onLogout}
@@ -311,10 +311,10 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ lang, onLogout, onNaviga
             </button>
           )}
 
-          <div className="flex p-1 rounded-xl bg-white/5 border border-white/10 text-xs">
+          <div className="flex flex-wrap sm:flex-nowrap p-1 rounded-xl bg-white/5 border border-white/10 text-xs max-w-full overflow-x-auto gap-0.5">
             <button
               onClick={() => setAdminSubTab('orders')}
-              className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
+              className={`px-2.5 sm:px-3 py-1.5 rounded-lg transition-colors cursor-pointer whitespace-nowrap text-center ${
                 adminSubTab === 'orders' ? 'bg-[#d0bcff] text-[#131313] font-bold' : 'text-[#958ea0] hover:text-white'
               }`}
             >
@@ -322,15 +322,15 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ lang, onLogout, onNaviga
             </button>
             <button
               onClick={() => setAdminSubTab('users')}
-              className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
+              className={`px-2.5 sm:px-3 py-1.5 rounded-lg transition-colors cursor-pointer whitespace-nowrap text-center ${
                 adminSubTab === 'users' ? 'bg-[#d0bcff] text-[#131313] font-bold' : 'text-[#958ea0] hover:text-white'
               }`}
             >
-              {lang === 'fa' ? `کاربران سایت (${users.length})` : `Users (${users.length})`}
+              {lang === 'fa' ? `کاربران (${users.length})` : `Users (${users.length})`}
             </button>
             <button
               onClick={() => setAdminSubTab('storage')}
-              className={`px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer ${
+              className={`px-2.5 sm:px-3 py-1.5 rounded-lg transition-colors flex items-center justify-center gap-1 cursor-pointer whitespace-nowrap text-center ${
                 adminSubTab === 'storage' ? 'bg-[#d0bcff] text-[#131313] font-bold' : 'text-[#958ea0] hover:text-white'
               }`}
             >
@@ -339,19 +339,19 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ lang, onLogout, onNaviga
             </button>
             <button
               onClick={() => setAdminSubTab('settings')}
-              className={`px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer ${
+              className={`px-2.5 sm:px-3 py-1.5 rounded-lg transition-colors flex items-center justify-center gap-1 cursor-pointer whitespace-nowrap text-center ${
                 adminSubTab === 'settings' ? 'bg-[#d0bcff] text-[#131313] font-bold' : 'text-[#958ea0] hover:text-white'
               }`}
             >
               <Settings className="w-3.5 h-3.5" />
-              <span>{lang === 'fa' ? 'تنظیمات سایت' : 'Settings'}</span>
+              <span>{lang === 'fa' ? 'تنظیمات' : 'Settings'}</span>
             </button>
           </div>
 
           <button
             onClick={fetchData}
             disabled={loading}
-            className="p-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-[#e5e2e1] transition-all"
+            className="p-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-[#e5e2e1] transition-all cursor-pointer"
             title="بروزرسانی داده‌ها"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
@@ -669,8 +669,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ lang, onLogout, onNaviga
           {/* Card 2: Telegram Channel ID */}
           <div className="glass-panel rounded-2xl p-6 border border-white/10 space-y-4 text-right">
             <div>
-              <h3 className="text-base font-bold text-white">آدرس و آیدی کانال تلگرام استودیو</h3>
-              <p className="text-xs text-[#8c94a4] mt-0.5">کانالی که دکمه تلگرام در هدر و فوتر به آن لینک می‌شود.</p>
+              <h3 className="text-base font-bold text-white">آدرس و آیدی کانال تلگرام ریتم</h3>
+              <p className="text-xs text-[#8c94a4] mt-0.5">کانالی که دکمه تلگرام در فوتر و شبکه‌ها به آن لینک می‌شود.</p>
             </div>
 
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
@@ -701,7 +701,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ lang, onLogout, onNaviga
                 <Megaphone className="w-4 h-4 text-[#ffb869]" />
                 <span>پیام اطلاعیه سراسری برای کاربران سایت</span>
               </h3>
-              <p className="text-xs text-[#8c94a4] mt-0.5">متن اخبار، تخفیف ویژه یا اعلامیه‌های فوری استودیو ریتم.</p>
+              <p className="text-xs text-[#8c94a4] mt-0.5">متن اخبار، تخفیف ویژه یا اعلامیه‌های فوری ریتم.</p>
             </div>
 
             <textarea

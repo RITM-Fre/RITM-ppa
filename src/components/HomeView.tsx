@@ -39,7 +39,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
         {/* Badge */}
         <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-white/5 border border-white/10 text-xs font-medium text-[#d0bcff]">
           <span className="w-2 h-2 rounded-full bg-[#a3e635]" />
-          <span>{lang === 'fa' ? 'استودیو تدوین ویدیو و مهندسی دیجیتال ریتم' : 'RITM Production & Creative Code'}</span>
+          <span>{lang === 'fa' ? 'ریتم — تدوین ویدیو و مهندسی دیجیتال' : 'RITM Production & Creative Code'}</span>
         </div>
 
         {/* Big Bold Headline */}
@@ -121,7 +121,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
       <section className="max-w-6xl mx-auto px-4">
         <div className="text-center max-w-xl mx-auto mb-8 space-y-2">
           <h2 className="text-xl sm:text-3xl font-extrabold text-white">
-            {lang === 'fa' ? 'زمینه‌های کاری استودیو ریتم' : 'Our Creative Disciplines'}
+            {lang === 'fa' ? 'زمینه‌های کاری ریتم' : 'Our Creative Disciplines'}
           </h2>
           <p className="text-xs sm:text-sm text-[#8c94a4]">
             {lang === 'fa'
@@ -202,7 +202,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
         <div className="glass-panel rounded-3xl p-6 sm:p-10 border border-white/10 space-y-6">
           <div className="text-center space-y-1">
             <h3 className="text-lg sm:text-2xl font-bold text-white">
-              {lang === 'fa' ? 'چرا همکاری با استودیو ریتم؟' : 'Why Choose RITM?'}
+              {lang === 'fa' ? 'چرا همکاری با ریتم؟' : 'Why Choose RITM?'}
             </h3>
             <p className="text-xs text-[#8c94a4]">
               {lang === 'fa' ? 'اصول حرفه‌ای ما برای تضمین رضایت کامل شما' : 'Our standard for guaranteed client satisfaction'}

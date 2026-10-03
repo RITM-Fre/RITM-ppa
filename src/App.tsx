@@ -15,8 +15,7 @@ import { BotHealthTerminal } from './components/BotHealthTerminal';
 import { ProjectChat } from './components/ProjectChat';
 import { Footer } from './components/Footer';
 import { ProjectType, Order, AuthUser } from './types';
-import { Send, Shield, Lock, CheckCircle2, X } from 'lucide-react';
-
+import { X } from 'lucide-react';
 import { getOrders } from './services/api';
 
 export default function App() {
@@ -39,9 +38,8 @@ export default function App() {
   const [preselectedCategory, setPreselectedCategory] = useState<ProjectType>('video');
   const [pendingCount, setPendingCount] = useState<number>(0);
   const [showAdminLoginModal, setShowAdminLoginModal] = useState<boolean>(false);
-  const [selectedChatOrderCode, setSelectedChatOrderCode] = useState<string | null>(null);
+  const [chatInitialOrderCode, setChatInitialOrderCode] = useState<string | null>(null);
 
-  // Authentication states
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(() => {
     try {
       const stored = localStorage.getItem('ritm_client_user');
@@ -62,7 +60,6 @@ export default function App() {
   const isAdminLoggedIn = Boolean(adminToken);
 
   const changeTab = (tab: 'home' | 'order' | 'admin' | 'portfolio' | 'status' | 'client' | 'chat') => {
-    // If user tries to open admin or status tab without being logged in, show login modal
     if ((tab === 'admin' || tab === 'status') && !isAdminLoggedIn) {
       setShowAdminLoginModal(true);
       return;
@@ -76,7 +73,12 @@ export default function App() {
     } catch (e) {}
   };
 
-  // Sync pending orders count for admin notification
+  const handleNavigateToChat = (orderCode?: string) => {
+    setChatInitialOrderCode(orderCode || null);
+    changeTab('chat');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   useEffect(() => {
     const checkPending = async () => {
       try {
@@ -84,9 +86,7 @@ export default function App() {
         if (data.success && Array.isArray(data.orders)) {
           setPendingCount(data.orders.length);
         }
-      } catch (e) {
-        // Ignore
-      }
+      } catch (e) {}
     };
     checkPending();
     const interval = setInterval(checkPending, 15000);
@@ -120,19 +120,13 @@ export default function App() {
     } catch (e) {}
   };
 
-  const handleNavigateToChat = (orderCode?: string) => {
-    setSelectedChatOrderCode(orderCode || null);
-    changeTab('chat');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
   const handleAdminLoginSuccess = (token: string) => {
     setAdminToken(token);
     try {
       localStorage.setItem('ritm_admin_token', token);
     } catch (e) {}
     setShowAdminLoginModal(false);
-    setActiveTab('admin');
+    changeTab('admin');
   };
 
   const handleAdminLogout = () => {
@@ -140,16 +134,12 @@ export default function App() {
     try {
       localStorage.removeItem('ritm_admin_token');
     } catch (e) {}
-    changeTab('order');
-  };
-
-  // Handle clicking the corner button
-  const handleCornerAdminClick = () => {
-    if (isAdminLoggedIn) {
-      setActiveTab('admin');
-    } else {
-      setShowAdminLoginModal(true);
-    }
+    setActiveTab('home');
+    try {
+      const url = new URL(window.location.href);
+      url.searchParams.set('tab', 'home');
+      window.history.replaceState({}, '', url.toString());
+    } catch (e) {}
   };
 
   return (
@@ -157,7 +147,7 @@ export default function App() {
       dir={lang === 'fa' ? 'rtl' : 'ltr'}
       className="min-h-screen flex flex-col bg-[#0b0c10] text-[#f1f2f6] relative overflow-hidden font-sans"
     >
-      {/* Top Navigation */}
+      {/* 3-PIECE ISLAND FLOATING HEADER */}
       <Navbar
         activeTab={activeTab}
         setActiveTab={changeTab}
@@ -179,8 +169,8 @@ export default function App() {
       )}
 
       {/* Main Content Area */}
-      <main className="flex-1 relative z-10 w-full">
-        {/* VIEW 0: STUDIO HOME EXPERIENCE */}
+      <main className="flex-1 relative z-10 w-full pt-20 sm:pt-24 pb-20 md:pb-8">
+        {/* VIEW 0: HOME */}
         {activeTab === 'home' && (
           <HomeView
             lang={lang}
@@ -201,7 +191,7 @@ export default function App() {
           />
         )}
 
-        {/* VIEW 2: CLIENT PORTAL & WORKFLOW TRACKING */}
+        {/* VIEW 2: CLIENT PORTAL */}
         {activeTab === 'client' && (
           <ClientPortal
             lang={lang}
@@ -214,39 +204,33 @@ export default function App() {
           />
         )}
 
-        {/* VIEW 3: PORTFOLIO & SERVICES */}
+        {/* VIEW 3: PORTFOLIO, PRODUCED WEBSITES & APPS */}
         {activeTab === 'portfolio' && (
           <PortfolioShowcase
             lang={lang}
             onSelectCategoryForOrder={handleSelectCategoryForOrder}
-          />
-        )}
-
-        {/* VIEW 4: ONLINE PROJECT CHAT / DISCUSSION */}
-        {activeTab === 'chat' && (
-          <ProjectChat
-            lang={lang}
-            currentUser={currentUser}
             isAdmin={isAdminLoggedIn}
-            initialOrderCode={selectedChatOrderCode}
-            onNavigateToOrder={() => changeTab('order')}
           />
         )}
 
-        {/* VIEW 5: ADMIN MANAGEMENT HUB (Protected: Only accessible when logged in with password Mohmah123) */}
+        {/* VIEW 4: ADMIN HUB */}
         {activeTab === 'admin' && (
           isAdminLoggedIn ? (
-            <AdminPanel lang={lang} onLogout={handleAdminLogout} onNavigateToChat={handleNavigateToChat} />
+            <AdminPanel
+              lang={lang}
+              onLogout={handleAdminLogout}
+              onNavigateToChat={handleNavigateToChat}
+            />
           ) : (
             <AdminLogin
               lang={lang}
               onLoginSuccess={handleAdminLoginSuccess}
-              onCancel={() => changeTab('order')}
+              onCancel={() => changeTab('home')}
             />
           )
         )}
 
-        {/* VIEW 6: SYSTEM LOGS (Protected: Also ONLY accessible when admin is logged in!) */}
+        {/* VIEW 5: SYSTEM STATUS */}
         {activeTab === 'status' && (
           isAdminLoggedIn ? (
             <BotHealthTerminal lang={lang} />
@@ -254,54 +238,32 @@ export default function App() {
             <AdminLogin
               lang={lang}
               onLoginSuccess={handleAdminLoginSuccess}
-              onCancel={() => changeTab('order')}
+              onCancel={() => changeTab('home')}
             />
           )
         )}
+
+        {/* VIEW 6: 1-TO-1 PRIVATE PROJECT CHAT */}
+        {activeTab === 'chat' && (
+          <ProjectChat
+            lang={lang}
+            currentUser={currentUser}
+            isAdmin={isAdminLoggedIn}
+            initialOrderCode={chatInitialOrderCode}
+            onNavigateToOrder={() => changeTab('order')}
+            onNavigateToAuth={() => changeTab('client')}
+            onLogin={handleClientLogin}
+          />
+        )}
       </main>
 
-      {/* CORNER BUTTON: "پنل ادمین" AS REQUESTED BY USER */}
-      <div className="fixed bottom-6 right-6 z-40 flex items-center gap-2">
-        <button
-          onClick={handleCornerAdminClick}
-          className={`flex items-center gap-2 px-4 py-3 rounded-2xl shadow-2xl transition-all duration-300 border text-xs font-bold ${
-            isAdminLoggedIn
-              ? 'bg-[#1e1e1e]/90 hover:bg-[#252525] text-[#d0bcff] border-[#d0bcff]/40 shadow-[#d0bcff]/10'
-              : 'bg-[#181818]/90 hover:bg-[#222222] text-[#e5e2e1] border-white/15 hover:border-[#d0bcff]/40'
-          } backdrop-blur-xl hover:scale-105 active:scale-95`}
-          title={isAdminLoggedIn ? 'پنل ادمین فعال است (کلیک برای مشاهده)' : 'ورود به پنل ادمین با رمز عبور'}
-        >
-          <Shield className="w-4 h-4 text-[#d0bcff]" />
-          <span>{lang === 'fa' ? 'پنل ادمین' : 'Admin Panel'}</span>
-          {isAdminLoggedIn ? (
-            <span className="w-2 h-2 rounded-full bg-[#a3e635] animate-pulse" />
-          ) : (
-            <Lock className="w-3 h-3 text-[#ffb869]" />
-          )}
-        </button>
-      </div>
-
-      {/* Floating direct Telegram Channel link button on bottom-left */}
-      <a
-        href="https://t.me/RITM_FreeLancer"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="fixed bottom-6 left-6 z-40 p-3.5 rounded-full bg-[#d0bcff] text-[#131313] shadow-2xl hover:scale-110 active:scale-95 transition-all flex items-center gap-2 group hover:shadow-[#d0bcff]/30 cursor-pointer"
-        title="کانال رسمی تلگرام ریتم"
-      >
-        <Send className="w-5 h-5 fill-current" />
-        <span className="max-w-0 overflow-hidden whitespace-nowrap group-hover:max-w-xs transition-all duration-300 font-bold text-xs px-0 group-hover:px-1">
-          @RITM_FreeLancer
-        </span>
-      </a>
-
-      {/* ADMIN LOGIN MODAL (When corner button or protected route is clicked) */}
+      {/* ADMIN LOGIN MODAL */}
       {showAdminLoginModal && !isAdminLoggedIn && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md">
           <div className="relative w-full max-w-md">
             <button
               onClick={() => setShowAdminLoginModal(false)}
-              className="absolute top-4 left-4 z-10 p-2 rounded-full bg-white/10 hover:bg-white/20 text-[#e5e2e1] transition-colors"
+              className="absolute top-4 left-4 z-10 p-2 rounded-full bg-white/10 hover:bg-white/20 text-[#e5e2e1] transition-colors cursor-pointer"
             >
               <X className="w-4 h-4" />
             </button>
@@ -314,8 +276,18 @@ export default function App() {
         </div>
       )}
 
-      {/* Footer */}
-      <Footer lang={lang} />
+      {/* FOOTER (With simple Admin Panel button & mobile padding) */}
+      <Footer
+        lang={lang}
+        onOpenAdminLogin={() => {
+          if (isAdminLoggedIn) {
+            changeTab('admin');
+          } else {
+            setShowAdminLoginModal(true);
+          }
+        }}
+        isAdminLoggedIn={isAdminLoggedIn}
+      />
     </div>
   );
 }
